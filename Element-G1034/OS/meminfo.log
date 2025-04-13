@@ -1,0 +1,24 @@
+HNT1000> meminfo 
+  status    calls       bytes
+ --------- ----------- ----------- 
+ alloc     276         136632     
+ free      266         136240     
+
+Memory system:
+   Heap 594784 bytes, Free 348404 bytes, Max 348404 bytes
+
+Threads Info:
+id    state    Pri(Set) Name                   StackBase   Size   usage
+0001  RUN      31 ( 31) Idle Thread            0xa01aa0a8  2048   ( 32%)664   
+0002  EXIT     14 ( 14) pthread-main           0xa01c0c54  7912   ( 30%)2452  
+0003  SLEEP    8  ( 8 ) (null thread)          0xa01bc704  4096   ( 16%)676   
+0004  SLEEP    7  ( 7 ) (null thread)          0xa01bd704  4096   (  8%)348   
+0005  SLEEP    1  ( 1 ) ploam                  0xa022a52c  3816   ( 82%)3132  
+0006  SLEEP    5  ( 5 ) signalTrd              0xa01a2ec4  7912   (  5%)452   
+0007  SLEEP    2  ( 2 ) timerTrd               0xa01a0ec4  7912   (  8%)692   
+0008  SLEEP    12 ( 12) igmp                   0xa01ee590  7912   ( 26%)2088  
+0009  SLEEP    3  ( 3 ) omci pkt               0xa019391c  16104  ( 12%)1972  
+0010  SLEEP    4  ( 4 ) omci event             0xa019791c  3816   ( 21%)812   
+0011  RUN      17 ( 17) uart_main              0xa01e2ea8  16104  ( 13%)2168  
+0012  EXIT     15 ( 15) telnet_main            0xa01e6ea8  16104  (  3%)616   
+0013  SLEEP    16 ( 16) (null thread)          0xa01be704  4096   ( 18%)764   

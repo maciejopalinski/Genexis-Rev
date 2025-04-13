@@ -1,0 +1,47 @@
+RedBoot> help
+Manage aliases kept in FLASH memory
+   alias name [value]
+Set/Query the system console baud rate
+   baudrate [-b <rate>]
+Manage machine caches
+   cache [ON | OFF]
+Display/switch console channel
+   channel [-1|<channel number>]
+Compute a 32bit checksum [POSIX algorithm] for a range of memory
+   cksum -b <location> -l <length>
+Display (hex dump) a range of memory
+   dump -b <location> [-l <length>] [-s] [-1|-2|-4]
+Manage FLASH images
+   fis {cmds}
+Manage configuration kept in FLASH memory
+   fconfig [-i] [-l] [-n] [-f] [-d] | [-d] nickname [value]
+Execute code at a location
+   go [-w <timeout>] [-c] [-n] [entry]
+Help about help?
+   help [<topic>]
+Display command history
+   history
+Set/change IP addresses
+   ip_address [-b] [-l <local_ip_address>[/<mask_len>]] [-h <server_address>]
+Load a file
+   load [-r] [-v] [-h <host>] [-p <TCP port>][-m <varies>] [-c <channel_number>]
+        [-b <base_address>] <file_name>
+Compare two blocks of memory
+   mcmp -s <location> -d <location> -l <length> [-1|-2|-4]
+Copy memory from one address to another
+   mcopy -s <location> -d <location> -l <length> [-1|-2|-4]
+Fill a block of memory with a pattern
+   mfill -b <location> -l <length> -p <pattern> [-1|-2|-4]
+Network connectivity test
+   ping [-v] [-n <count>] [-l <length>] [-t <timeout>] [-r <rate>]
+        [-i <IP_addr>] -h <IP_addr>
+Reset the system
+   reset
+Display RedBoot version information
+   version
+Display (hex dump) a range of memory
+   x -b <location> [-l <length>] [-s] [-1|-2|-4]
+Show meta information about the flash images.
+   getImageInfo
+Set meta information about flash images
+   setImageInfo <attribute [v|a|c|b]> <value>
