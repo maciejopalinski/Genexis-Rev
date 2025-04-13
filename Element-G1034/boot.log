@@ -1,0 +1,112 @@
+M25PXX : Init device with JEDEC ID 0xC22016C2.
+QCA ESA: 00:0f:94:1a:00:e5
+set dma mode to 2
+
+Globle chip control: 0x050d5303
+          MIT mode:  normal mode
+        CLK8K mode:  output 8KHz clock
+          MDIO sel:  main board mdio
+          CDR mode:  0:GE0 serdes rx
+          PON mode:  GPON
+        GEPHY mode:  100MHz
+          DDR mode:  266MHz
+          HPI mode:  hpi clock gate not enable
+          UNI mode:  GE PHY mode
+Configure lan2 serdes mode
+Ethernet eth0: MAC address 00:0f:94:1a:00:e5
+IP: 192.168.12.3, Default server: 192.168.12.1
+
+RedBoot(tm) bootstrap and debug environment [ROMRAM]
+Non-certified release, version HNT1000-RB.v1.1.2-R - built 15:36:25, Apr  8 2014
+
+Copyright (C) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+Free Software Foundation, Inc.
+RedBoot is free software, covered by the eCos license, derived from the
+GNU General Public License. You are welcome to change it and/or distribute
+copies of it under certain conditions. Under the license terms, RedBoot's
+source code and full license terms must have been made available to you.
+Redboot comes with ABSOLUTELY NO WARRANTY.
+
+Platform: QCA8827 (MIPS32 24Kc) 
+RAM: 0x80000000-0x802c0000 [0x80247878-0x80280378 available]
+     0x80010000-0x80247874 [0x80010000-0x80247874 available]
+FLASH: 0xbfc00000-0xbfffffff, 64 x 0x10000 blocks
+Meta info A:  Act=0,  Com=0,  ABC=0
+Meta info B:  Act=0,  Com=0,  ABC=0
+
+Meta info Guard/Age A: FFFF/FFFE.
+Meta info Guard/Age B: FFFF/FFFF.
+Meta info:
+        Guard/Age: FFFF/FFFE
+        Valid bmp: 3
+        Active: 0
+        Committed: 0
+        Act bfr Comm: 0
+Loading ecos from Flash_OS1...
+== Executing boot script in 5.000 seconds - enter ^C to abort
+RedBoot> fis load -l Flash_OS1;go
+   Image Name:   v1.2.1-R
+   Image Type:   MIPS Ecos Kernel Image (uncompressed)
+   Data Size:    342111 Bytes = 334.1 kB
+   Load Address: 80010000
+   Entry Point:  800100bc
+Image loaded from 0x80010000-0x80157358
+net work support.
+ecos entry: 0x800100BC
++qca_i2c.c, i2cInit, I2C i2c device 0 - SCL is set to 16666
+fal_I2CInit finished at Standard Speed
+JUDGE uni port, please wait...
+get ExtPHYEn=0
+get image flag info 0
+ppe irq Init finished
+creat mutex
+QCA ESA: 00:0f:94:1a:00:e5
+lwip ip : 192.168.1.222
+grebe_packet Init finished
+global Init finished
+ips Init finished
+mc Init finished
+fdb Init finished
+vlp Init finished
+port init finished
+fpc 0 init finished
+fpc 1 init finished
+fpc 2 init finished
+ ffm init finished
+tm init finished
+fid init finished
+qmap init finished
+vlp default config finished
+mc default config finished
+fdb default config finished
+port default config finished
+fpc default config finished
+qmap default config finished
+ffm default config finished
+tm default config finished
+fid default config finished
+ppe next hop init finished
+ppe_init finished
+dlm init finished
+ptp ulm init finished
+ppe total counter init finished
+ppe clock gatting init finished
+get image flag info 0
+gpon_isr_init finished
+grebe_gpon_init finished
+gponDeviceInit finished
+End ploamInit finished
+get image flag info 0
+fal_VlanInit finished
+fal_McInit finished
+fal_FdbInit finished
+fal_PortInit finished
+fal_CclInit finished
+fal_QosInit finished
+get image flag info 0
+omci_main.c main
+OMCI Initial 
+IGMP Initial 
+get image flag info 0
+RSTP Initial 
+HNT1000>
