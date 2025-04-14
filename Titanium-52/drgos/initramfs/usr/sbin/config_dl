@@ -1,0 +1,185 @@
+#!/bin/ash
+
+#
+# config_dl
+#
+# This script is used for downloading a configuration file and
+# applying it. It can also handle a number of commands embeded in 
+# configuration file, e.g: ! cmd: write-memory
+# Normally this script is called from dhcp client script.
+#
+# Copyright (C) 2010 PacketFront Systems AB
+#
+
+. /etc/functions.sh
+
+RETRIES=5
+SLEEP=10
+tf=`mktemp /tmp/config_dl.XXXXXXXXXX`
+start_conf=/config/.ox-startup-config
+res=0
+
+usage() {
+    echo >&2 \
+    "Usage: $0 tftp://[HOST]/[FILENAME]"
+    exit 1
+}
+
+LPREF="config download"
+log() {
+    logger -p daemon.info -s "$LPREF: $1"
+}
+log_err() {
+    logger -p daemon.error -s "$LPREF: $1"
+}
+log_alert() {
+    logger -p daemon.alert -s "$LPREF: $1"
+}
+
+# check that mktemp above worked
+[ -f ${tf} ] || { log_err "failed to create ${tf}"; exit 1; }
+
+# cexit: clean-up and exit
+cexit() {
+    [ ! -f ${tf} ] || mv ${tf} /tmp/config_dl.last
+    rm -f ${tf}*
+    exit $1
+}
+
+URL=$1
+[ -n "$URL" ] || usage
+
+case $URL in
+    tftp://*)
+      TFTP_SERVER=`echo $URL |cut -d'/' -f 3`
+      TFTP_FILE=`echo $URL |cut -d'/' -f 4-`
+      tcmd="tftp -g -l $tf -r $TFTP_FILE $TFTP_SERVER"
+      ;;
+    http://*)
+      tcmd="wget -O $tf $URL"
+      ;;
+    local:*)
+      localf="${URL#local:}"
+      RETRIES=1
+      tcmd="mv $localf $tf"
+      ;;
+    *)
+      log_err "Invalid URL: $URL"
+      cexit 1
+      ;;
+esac
+
+n=$RETRIES
+res=1
+log "starting download of $URL"
+# start download
+while [ $res != "0" -a $n -gt 0 ]; do
+    $tcmd
+    res=$?
+    n=$(( $n - 1 ))
+    if [ $res != "0"  -a $n -gt 0 ]; then
+	log_err "transfer failed, will retry $n times"
+	sleep $SLEEP
+    fi
+done
+
+if [ $res != "0" ]; then
+    logger -s "transfer failed"
+    cexit 1
+fi
+
+# check that downloaded has reasonable size
+wcb=`wc -c $tf | while read s f; do echo $s; exit 0; done`
+minsz=5
+maxsz=100000
+if [ "${wcb%%[!0-9]*}" != "$wcb" -o "$wcb" -lt $minsz -o "$wcb" -gt $maxsz ]; then
+    log_err "downloaded file has invalid size"
+    cexit 1
+fi
+
+# check that downloaded file only contain valid characters
+tr -d ' -~\n\r\t' < $tf > ${tf}2
+if [ -s ${tf}2 ]; then
+    log_err "downloaded file contain invalid characters"
+    rm ${tf}2
+    cexit 1
+fi
+rm ${tf}2
+
+# check that it contains !end
+if ! grep -q '^[[:space:]]*![[:space:]]*end' $tf; then
+    log_err "downloaded file has no !end marker"
+    cexit 1
+fi
+
+# store url
+echo -n "$URL" > /tmp/prev_config_dl
+
+# extract any commands
+sed -n 's/^[[:space:]]*![[:space:]]*cmd[[:space:]]*:[[:space:]]*\([a-zA-Z-]\+\)[[:space:]]*[\n\r]*$/\1/p' ${tf} > ${tf}.cmds
+
+if [ -s ${tf}.cmds ]; then
+    # strip commands from downloaded file
+    grep -v "^[[:space:]]*![[:space:]]*cmd[[:space:]]*:" ${tf} >  ${tf}2
+    cat ${tf}.cmds | while read cmd; do
+	case "$cmd" in
+
+	    copy-to-startup-config*)
+	    if cmp -s ${tf}2 $start_conf; then
+		log "downloaded file identical to stored config"
+	    else
+		fs_lock
+		if test "$?" != "0" ; then
+		    cexit $?
+		fi
+		
+		if ! cp ${tf}2 $start_conf || ! cmp -s ${tf}2 $start_conf; then
+		    log_err "failed to write startup configuration"
+		    fs_unlock
+		    cexit 1
+		fi
+		fs_unlock
+		log "stored downloaded config to startup-config"
+		if [ $cmd = "copy-to-startup-config-reload" ]; then
+		    log_alert "reload in 5 sec"
+		    (sleep 5; reboot)&
+		    cexit 0
+		fi
+	    fi
+	    ;;
+
+	    reload)
+	    log_alert "reload in 5 sec"
+	    (sleep 5; reboot)&
+	    cexit 0
+	    ;;
+
+	    copy-to-running-config)
+	    /usr/bin/oxsh -c ${tf}2
+	    log "applied downloaded config"
+	    ;;
+
+            replace-running-config)
+ 	    /usr/bin/oxsh -r ${tf}2
+ 	    log "Replaced running-config"
+ 	    ;;
+
+
+	    write-memory)
+	    /usr/bin/oxsh -x 'write memory'
+	    log "executed write memory"
+	    ;;
+
+	    *) 
+	    log "unknown command: $cmd"
+	    ;;
+	    
+	esac
+    done
+else
+    # default is to apply to running-config
+    /usr/bin/oxsh -r $tf
+    log "applied downloaded config"
+fi
+
+cexit 0

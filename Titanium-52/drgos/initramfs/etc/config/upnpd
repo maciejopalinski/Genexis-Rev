@@ -1,0 +1,5 @@
+config upnpd config
+	option enabled    	0
+	option log_output	0
+	option download 	1024
+	option upload   	512

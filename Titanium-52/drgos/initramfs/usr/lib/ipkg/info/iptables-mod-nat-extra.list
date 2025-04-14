@@ -1,0 +1,6 @@
+/
+/usr/
+/usr/lib/
+/usr/lib/iptables/
+/usr/lib/iptables/libipt_NETMAP.so
+/usr/lib/iptables/libipt_REDIRECT.so

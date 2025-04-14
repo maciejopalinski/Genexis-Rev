@@ -1,0 +1,78 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (C) 2008,2010 Packetfront Systems AB
+
+START=21
+STOP=30
+
+image_filename="/drgos0-0.img"
+boot_config_file="/config/.boot"
+uci_link_file="/etc/config/boot"
+
+# Handles two cases:
+#
+# 1. Detects if there is a firmware image file in RAM filesystem - this can
+# happen if there is no firmware in the device, but bootloader can find an
+# image on a TFTP server. May be used for factory screw ups, or if there is
+# total obliteration of filesystem for some reason.
+#
+# 2. DHCP driven upgrade - firmware is stored to flash separately, but still
+# may need to handle case of no boot config file
+#
+# After each of the above, check for boot config file, if there isn't one,
+# make one. This should not happen normally if binary images are built
+# correctly. However, this was not the case for DRG700 v1.1.9 and v1.2.1-
+# based binary images.
+
+
+save_image() {
+  local image_name=`chkimage $image_filename 2>/dev/null| grep "^Image Name"| cut -d':' -f 2- | sed 's/^[ \t]*//'`
+
+  # Shut down all interfaces and set the flag
+  ifdown -a
+  # Put this at last to await logger works
+  logger -s "Saving discovered firmware image ($image_name) to flash..."
+  mv $image_filename /tmp/drgos0-0.img
+  /usr/sbin/upgrader -t firmware -c /tmp/drgos0-0.img
+  if [ $? -eq 0 ] ; then
+    sync
+    logger -s "Succeeded in saving upgraded firmware to flash"
+  else
+    logger -s "Failed to save upgraded firmware to flash"
+  fi
+}
+
+start() {
+  local image_name
+
+  # Check for firmware image in filesystem, save to flash if found
+  if [ -f "$image_filename" ] ; then
+    save_image
+
+    # Save the name of the downloaded firmware
+    image_name=`chkimage /tmp/drgos0-0.img 2>/dev/null| grep "^Image Name"|cut -d'-' -f 3-`
+  fi
+
+  # Create link to boot config
+  ln -sf $boot_config_file $uci_link_file
+
+  # If no boot config found, create one
+  if [ ! -f $boot_config_file ] ; then
+    logger -s "No boot config file found, creating one..."
+    # If no name available, i.e. didn't upgrade via RAM, maybe DHCP driven
+    # instead. In this case just use the name of the running firmware.
+    if [ ! $image_name ] ; then
+      image_name=`uname -r | cut -d'-' -f 2-`".img"
+      logger -s "Firmware version unknown, using running version"
+    fi
+
+    logger -s "Creating boot config file; boot $image_name"
+    upgrader -u $image_name
+
+  fi
+}
+
+stop() {
+  sleep 1
+}
+

@@ -1,0 +1,8 @@
+/
+/lib/
+/lib/modules/
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/nf_defrag_ipv4.ko
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/xt_state.ko
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/nf_conntrack_ipv4.ko
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/nf_conntrack.ko

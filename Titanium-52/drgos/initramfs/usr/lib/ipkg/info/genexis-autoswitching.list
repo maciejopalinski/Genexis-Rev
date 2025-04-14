@@ -1,0 +1,8 @@
+/
+/etc/
+/etc/init.d/
+/etc/init.d/autoswitching
+/usr/
+/usr/bin/
+/usr/bin/autoswitch
+/usr/bin/drg700_autoswitch.sh

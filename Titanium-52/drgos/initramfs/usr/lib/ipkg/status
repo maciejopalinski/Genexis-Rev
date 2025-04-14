@@ -1,0 +1,643 @@
+Package: base-files-comcerto1000
+Status: install ok installed
+Root: /
+Conffiles: /etc/banner 0b374e7b19804216c584f4887d22bc35 /etc/hosts 89f616defd47b22702e3158ca7e70487 /etc/inittab 948552dc1a20f588de84409578400956 /etc/group 58224041e4289cd2aa2598cfe689852b /etc/passwd e64d6a11c8caaec3105a0d42e93133fd /etc/profile 4d576d06e70c2b1c2cb179486004663a /etc/shells 41cc20839b89b06aff471ea60b80430a /etc/sysctl.conf cb7875d03ab0e3110efffc78005b3fb7 /etc/config/network 45e9f549aacc865492babff55da0d35f /etc/config/user 722f513fca09551c303d0e7112028482
+Version: 14-r13118
+
+Package: libc
+Status: install ok installed
+Root: /
+Version: 2.7-14
+
+Package: libgcc
+Status: install ok installed
+Root: /
+Version: 4.1.2-14
+
+Package: libstdcpp
+Status: install ok installed
+Root: /
+Version: 4.1.2-14
+
+Package: libpthread
+Status: install ok installed
+Root: /
+Version: 2.7-14
+
+Package: librt
+Status: install ok installed
+Root: /
+Version: 2.7-14
+
+Package: bridge
+Status: install ok installed
+Root: /
+Version: 1.4-1
+
+Package: busybox
+Status: install ok installed
+Root: /
+Version: 1.11.2-1
+
+Package: cmm
+Status: install ok installed
+Root: /
+Version: 6.00-17
+
+Package: coreutils-base64
+Status: install ok installed
+Root: /
+Version: 7.2-1
+
+Package: kmod-csme-bridge
+Status: install ok installed
+Root: /
+Conffiles: /etc/init.d/csme-bridge-prepare eaf4f09adefbb89c2b87c11a8696e727 /etc/init.d/csme-bridge-loader c2276480de168e40bd8d14cf5f030eec /etc/init.d/matisse-no-ifup 53b2b1b966c76cf43d5b545e63f8c6bd
+Version: 2.6.33.5+1.00.1-comcerto1000-1
+
+Package: dnsmasq
+Status: install ok installed
+Root: /
+Version: 2.55-5
+
+Package: dropbear
+Status: install ok installed
+Root: /
+Version: 0.51-2
+
+Package: ethtool
+Status: install ok installed
+Root: /
+Version: 3-0
+
+Package: kmod-fci
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+5.00-comcerto1000-1
+
+Package: fpp-firmware
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+3.00.1-comcerto1000-1
+
+Package: gdb-server
+Status: install ok installed
+Root: /
+Version: 7.0
+
+Package: genexis-autoswitching
+Status: install ok installed
+Root: /
+Version: 20120508-1
+
+Package: genexis-gaps
+Status: install ok installed
+Root: /
+Version: 2-1
+
+Package: kmod-genexis-switch
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-genexis-wifi-aquila
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+9.2.0_U10.5.13-comcerto1000-1
+
+Package: libgmp
+Status: install ok installed
+Root: /
+Version: 4.2.1-1
+
+Package: haserl
+Status: install ok installed
+Root: /
+Version: 0.8.0-1
+
+Package: hotplug2
+Status: install ok installed
+Root: /
+Version: 0.9-1
+
+Package: ip
+Status: install ok installed
+Root: /
+Version: 2.6.25-1
+
+Package: iptables
+Status: install ok installed
+Root: /
+Conffiles: /etc/config/firewall 3a173c898f373293374e1b3d01ba9f46 /etc/firewall.user a13085076976b14bafca9972fc46c925
+Version: 1.4.7-1
+
+Package: iptables-mod-conntrack
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-conntrack-extra
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-extra
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-filter
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-imq
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-ipopt
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-ipsec
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-nat
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-nat-extra
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: iptables-mod-ulog
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: ip6tables
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: libiptc
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: libxtables
+Status: install ok installed
+Root: /
+Version: 1.4.7-1
+
+Package: kernel
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-scsi-core
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-fpp-driver
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-core
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-conntrack
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-conntrack-extra
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-filter
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-ipopt
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-ipsec
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-nat
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-nat-extra
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-nathelper
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-nathelper-extra
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-imq
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-ulog
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ipt-extra
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ip6tables
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-nfnetlink
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-ppp
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-pppoe
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-mppe
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-usb2
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-usb-storage
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: kmod-vwd-rtbr-driver
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-1
+
+Package: libcli
+Status: install ok installed
+Root: /
+Version: 1.9.3-1
+
+Package: libgdbm
+Status: install ok installed
+Root: /
+Version: 1.8.3-0
+
+Package: libnfconntrack
+Status: install ok installed
+Root: /
+Version: 0.0.100
+
+Package: libnfnetlink
+Status: install ok installed
+Root: /
+Version: 1.0.0
+
+Package: libpcap
+Status: install ok installed
+Root: /
+Version: 0.9.8-1
+
+Package: libltdl
+Status: install ok installed
+Root: /
+Version: 1.5.24-1
+
+Package: miniupnpd
+Status: install ok installed
+Root: /
+Version: 1.4-1
+
+Package: mmiotool
+Status: install ok installed
+Root: /
+Version: 1.00-1
+
+Package: msp-firmware
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+3.00.11-comcerto1000-1
+
+Package: msp-io-app
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+1.00.0-comcerto1000-1
+
+Package: mtd
+Status: install ok installed
+Root: /
+Version: 8
+
+Package: libncurses
+Status: install ok installed
+Root: /
+Version: 5.6-1
+
+Package: rdisc6
+Status: install ok installed
+Root: /
+Version: 1.0.1-1
+
+Package: rdnssd
+Status: install ok installed
+Root: /
+Version: 1.0.1-1
+
+Package: libnetsnmp
+Status: install ok installed
+Root: /
+Version: 5.4.2.1-2
+
+Package: snmpd
+Status: install ok installed
+Root: /
+Conffiles: /etc/default/snmpd 5f2dc66258ba06b7590a6aea030d5093 /etc/config/snmpd b75c092335626875f8a7d14d731d248b
+Version: 5.4.2.1-2
+
+Package: ntpclient
+Status: install ok installed
+Root: /
+Version: 2007_365-1
+
+Package: libopenssl
+Status: install ok installed
+Root: /
+Version: 0.9.8g-1
+
+Package: packetfront-basefiles
+Status: install ok installed
+Root: /
+Version: 20110714-1
+
+Package: kmod-packetfront-catv
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-2
+
+Package: packetfront-cwmp
+Status: install ok installed
+Root: /
+Version: 3.0.9-1
+
+Package: packetfront-doc
+Status: install ok installed
+Root: /
+Version: 20110203-1
+
+Package: packetfront-firewall
+Status: install ok installed
+Root: /
+Version: 20110105-1
+
+Package: kmod-packetfront-gpio
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-2
+
+Package: packetfront-igmp
+Status: install ok installed
+Root: /
+Version: 20100531-1
+
+Package: packetfront-libpmfcfg
+Status: install ok installed
+Root: /
+Version: 0.1.0-1
+
+Package: packetfront-libpmfcmd
+Status: install ok installed
+Root: /
+Version: 0.1.0-1
+
+Package: packetfront-libsc
+Status: install ok installed
+Root: /
+Version: 0.1.0-1
+
+Package: packetfront-libswitch
+Status: install ok installed
+Root: /
+Version: 0.1.0-1
+
+Package: packetfront-ma
+Status: install ok installed
+Root: /
+Version: 20100302-1
+
+Package: packetfront-maconfig
+Status: install ok installed
+Root: /
+Version: 20110522-1
+
+Package: packetfront-msconfig
+Status: install ok installed
+Root: /
+Version: 20100302-1
+
+Package: packetfront-msconfig-helper
+Status: install ok installed
+Root: /
+Version: 20111010-1
+
+Package: packetfront-netlink-monitor
+Status: install ok installed
+Root: /
+Version: 0.1-1
+
+Package: packetfront-onu-upgrader
+Status: install ok installed
+Root: /
+Version: 20090123-1
+
+Package: packetfront-oxsh
+Status: install ok installed
+Root: /
+Version: 20091229-1
+
+Package: packetfront-pind
+Status: install ok installed
+Root: /
+Version: 20111111-1
+
+Package: kmod-packetfront-platform
+Status: install ok installed
+Root: /
+Version: 2.6.33.5-comcerto1000-2
+
+Package: packetfront-pmlh
+Status: install ok installed
+Root: /
+Version: 20111111-1
+
+Package: packetfront-sip
+Status: install ok installed
+Root: /
+Version: 1
+
+Package: packetfront-sysload
+Status: install ok installed
+Root: /
+Version: 20110130-1
+
+Package: ppp
+Status: install ok installed
+Root: /
+Version: 2.4.3-10
+
+Package: ppp-mod-pppoe
+Status: install ok installed
+Root: /
+Version: 2.4.3-10
+
+Package: kmod-proslic2
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+6.4.0-comcerto1000-1
+
+Package: qosapp
+Status: install ok installed
+Root: /
+Version: 1.02-12
+
+Package: kmod-qoscom
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+1.02-comcerto1000-18
+
+Package: radvd
+Status: install ok installed
+Root: /
+Conffiles: /etc/config/radvd 92ffaa0bf424635eadafe9c23557ee9d
+Version: 1.8-3
+
+Package: ralink-ated
+Status: install ok installed
+Root: /
+Version: 20090601-1
+
+Package: tcpdump
+Status: install ok installed
+Root: /
+Version: 3.9.4-1
+
+Package: uci
+Status: install ok installed
+Root: /
+Version: 0.7.3-1
+
+Package: libuci
+Status: install ok installed
+Root: /
+Version: 0.7.3-1
+
+Package: udevtrigger
+Status: install ok installed
+Root: /
+Version: 106-1
+
+Package: ulogd
+Status: install ok installed
+Root: /
+Conffiles: /etc/default/ulogd 3fe0485406b840c3928b1c07a09ae739 /etc/ulogd.conf d2104acb3a69bbc3f1f42b9a2dda6b23
+Version: 1.24-1
+
+Package: ulogd-mod-extra
+Status: install ok installed
+Root: /
+Version: 1.24-1
+
+Package: vapi
+Status: install ok installed
+Root: /
+Version: 2.14.0
+
+Package: kmod-csme
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+2.14.0-comcerto1000-
+
+Package: kmod-fpp-csme
+Status: install ok installed
+Root: /
+Version: 2.6.33.5+2.14.0-comcerto1000-
+
+Package: watchdog
+Status: install ok installed
+Root: /
+Version: 5.9
+
+Package: webif
+Status: install ok installed
+Root: /
+Version: 0.3-3
+
+Package: webif-theme-xwrt
+Status: install ok installed
+Root: /
+Version: 0.3-3
+
+Package: wide-dhcpv6-client
+Status: install ok installed
+Root: /
+Conffiles: /etc/config/dhcp6c 127ebee98320bae2dfc549e81b79f1ce
+Version: 20080615-7
+
+Package: wide-dhcpv6-server
+Status: install ok installed
+Root: /
+Conffiles: /etc/config/dhcp6s a40705a1635d596728e5316a7c096731
+Version: 20080615-7
+
+Package: wireless-tools
+Status: install ok installed
+Root: /
+Version: 29-1
+
+Package: zlib
+Status: install ok installed
+Root: /
+Version: 1.2.3-3
+

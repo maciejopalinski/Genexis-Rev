@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# Display IPv6 infomation, such as routing table and neighbors.
+# Translate interface names to uci sections
+# to show real interface for pppX, ethX et al.
+
+. /etc/functions.sh
+
+config_load network6
+
+for dev in $CONFIG_SECTIONS;do
+    local ifname device
+
+    config_get ifname $dev ifname
+    if [ -n "$ifname" -a -n "$dev" ]; then
+        sed="s/$ifname/$dev/g; $sed"
+    fi
+done
+
+sed="$sed; s/ra0/wlan1/; s/ra1/wlan2/; s/ra2/wlan3/; s/ra3/wlan4/"
+sed="$sed; s/\(.*vlan[0-9]*\)_\([0-9]*\)/\1\/\2/"
+
+if [ "$1" = "route6" ]; then
+  /sbin/route -n -A inet6 |sed "$sed" | grep -v -e lo -e eth -e wan
+elif [ "$1" = "neigh" ]; then
+    echo "Kernel IPv6 neighbours table"
+    echo "IPv6 address                            Interface   HW address        R/H    Status"
+    /usr/sbin/ip -6 neigh |sed "$sed" | grep -v -e lo -e eth   \
+        | awk '{if($6 == "router") printf "%-40s%-12s%-18s%-7s%-10s\n",$1,$3,$5,$6,$7;
+                     else printf "%-40s%-12s%-18s%-7s%-10s\n",$1,$3,$5,"host",$6}'
+elif [ "$1" = "gaps" ]; then
+    echo "gaps information:"
+    config_load gaps
+    local gaps_server
+    local gaps_client_enabled
+    
+    config_get gaps_server           server host
+
+    [ -n "$gaps_server" ] && gaps_client_enabled=`ps | grep gaps | grep $gaps_server`
+    if [ -n "$gaps_client_enabled" ]; then
+        gaps_client_enabled="YES"
+    else
+        gaps_client_enabled="NO"
+    fi
+
+    echo "  GAPS Client Enabled         : $gaps_client_enabled"
+    echo "  Server Address              : $gaps_server"
+
+    if [ -f "/tmp/gaps/last_time_contact_by_server.txt" ]; then
+        cat /tmp/gaps/last_time_contact_by_server.txt
+    else
+        echo "  Last Time Contact By Server : "
+    fi
+
+    if [ -f "/tmp/gaps/last_time_contact_to_server.txt" ]; then
+        cat /tmp/gaps/last_time_contact_to_server.txt
+    else
+        echo "  Last Time Contact To Server : "
+    fi
+
+    if [ -f "/tmp/gaps/next_time_contact_to_server.txt" ]; then
+        cat /tmp/gaps/next_time_contact_to_server.txt
+    else
+        echo "  Next Time Contact To Server : "
+    fi
+fi

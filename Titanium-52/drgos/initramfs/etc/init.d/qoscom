@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=89
+
+start() {
+
+	#Create nodes if not present
+	if [ ! -c /dev/adm0 ]
+		then mknod /dev/adm0 c 126 0
+	fi
+
+	if [ ! -c /dev/adm1 ]
+		then mknod /dev/adm1 c 126 1
+	fi
+
+	if [ ! -c /dev/sch0 ]
+		then mknod /dev/sch0 c 126 2
+	fi
+
+	if [ ! -c /dev/sch1 ]
+		then mknod /dev/sch1 c 126 3
+	fi
+
+	insmod qoscom
+
+	echo Applying default Admittance and Scheduler configuration
+	qosapp -r
+	qosapp -f /etc/qos.conf
+}
+
+stop(){
+	 [ -f /var/run/qosapp.pid ] && kill $(cat /var/run/qosapp.pid) >/dev/null 2>&1
+	rmmod qoscom
+}

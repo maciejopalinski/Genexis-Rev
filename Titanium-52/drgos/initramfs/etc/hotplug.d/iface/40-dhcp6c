@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#pieingCurrently hotplug is not being used for IPv6 and DHCP
+#DHCP6 handling is done by dhcp6c-state(dynamic config) 
+#and network6(static config)
+
+return 0

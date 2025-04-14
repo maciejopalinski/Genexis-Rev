@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=10
+
+apply_uci_config() {(
+	include /lib/config
+	uci_apply_defaults
+)}
+
+set_platform_param() {
+	local PLATFORM_NAME=`uci get usp.product.platform 2>/dev/null`
+	local PLATFORM_AUTOLOAD=`ls /etc/modules.d/*-packetfront-platform`
+	[ ! -z "$PLATFORM_NAME" ] && echo "packetfront-platform platform=$PLATFORM_NAME" >$PLATFORM_AUTOLOAD
+}
+
+set_default_config()
+{
+	local uci_confdir="/etc/config/"
+	local cfg="system"
+	local hostname=`uname -r |cut -d'-' -f 2`
+
+	/sbin/uci setdefault $uci_confdir/$cfg.system.hostname="$hostname"
+	/sbin/uci setdefault $uci_confdir/$cfg.system.timezone="UTC"
+}
+
+start() {
+	[ -f /proc/mounts ] || /sbin/mount_root
+	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
+	[ -f /proc/net/vlan/config ] && vconfig set_name_type DEV_PLUS_VID_NO_PAD
+
+	apply_uci_config
+	
+	mkdir -p /var/run
+	mkdir -p /var/log
+	mkdir -p /var/lock
+	mkdir -p /var/state
+	touch /var/log/wtmp
+	touch /var/log/lastlog
+	touch /tmp/resolv.conf.auto
+	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
+	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
+
+	    
+
+	# create /dev/root if it doesn't exist
+	[ -e /dev/root ] || {
+		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
+		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
+	}
+
+	set_platform_param
+
+        # Make device node /dev/slic before loading the modules
+	mknod /dev/slic c 127 0
+
+	load_modules /etc/modules.d/*
+
+	killall -q hotplug2
+	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
+			--max-children 1 --no-coldplug &
+
+	#pieing: No need to add interfaces here, they will all be created in the network script
+
+	# the coldplugging of network interfaces needs to happen later, so we do it manually here
+	#for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
+	#	/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
+	#done
+
+}

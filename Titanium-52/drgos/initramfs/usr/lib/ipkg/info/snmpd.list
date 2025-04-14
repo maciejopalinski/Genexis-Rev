@@ -1,0 +1,16 @@
+/
+/etc/
+/etc/config/
+/etc/config/snmpd
+/etc/snmp/
+/etc/snmp/snmpd.conf
+/etc/init.d/
+/etc/init.d/snmpd
+/etc/default/
+/etc/default/snmpd
+/usr/
+/usr/bin/
+/usr/bin/snmptrap
+/usr/bin/uci-snmptrap
+/usr/sbin/
+/usr/sbin/snmpd

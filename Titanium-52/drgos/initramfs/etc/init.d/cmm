@@ -1,0 +1,53 @@
+#!/bin/sh /etc/rc.common
+
+START=54
+
+CONF=/etc/config/fastforward
+OPTIONS="-f $CONF"
+
+start() {
+        if [ -e /proc/fppmode ]; then
+	  if [ "`grep "0" /proc/fppmode`" ]; then
+            exit 0
+          fi
+        fi
+	
+	if [ "`grep "Comcerto 1000" /proc/cpuinfo`" ]; then
+		insmod comcerto-vwd
+		major=`grep vwd /proc/devices | awk '{ print $1 }'`
+
+        	rm -f /dev/vwd0
+
+        	if [ -n "$major" ]; then
+                	mknod /dev/vwd0 c $major 0
+        	fi
+        fi
+
+	insmod nfnetlink 2> /dev/null
+if [ "`uname -r`" \> "2.6.32" ]; then
+	insmod nf_defrag_ipv4 2> /dev/null
+fi
+	insmod nf_conntrack 2> /dev/null
+	insmod nf_conntrack_ipv4 2> /dev/null
+	insmod nf_conntrack_ipv6 2> /dev/null
+	insmod nf_nat  2> /dev/null
+	insmod nf_conntrack_netlink  2> /dev/null
+
+	[ -d /var/run ] || mkdir -p /var/run
+        /usr/bin/cmm $OPTIONS
+}
+
+stop() {
+        if [ -e /proc/fppmode ]; then
+	  if [ "`grep "0" /proc/fppmode`" ]; then
+            exit 0
+          fi
+        fi
+        [ -f /var/run/cmm.pid ] && kill $(cat /var/run/cmm.pid) >/dev/null 2>&1
+	rmmod nf_conntrack_netlink 2> /dev/null
+	rmmod nf_nat 2> /dev/null
+	rmmod nf_conntrack_ipv6 2> /dev/null
+	rmmod nf_conntrack_ipv4 2> /dev/null
+	rmmod nfnetlink 2> /dev/null
+}
+

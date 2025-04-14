@@ -1,0 +1,331 @@
+#!/bin/sh /etc/rc.common
+
+START=65
+STOP=35
+
+config_load dhcp6c
+debug_dhcp6c_config_sh=0
+dhcp6c_config_sh_log_file=/tmp/dhcp6c_config_sh.log
+
+[ -f /tmp/debug_dhcp6c ] && {
+  debug_dhcp6c_config_sh=1
+  echo "dhcp6c_config_sh[$0 $@] started at $(date)" >> $dhcp6c_config_sh_log_file
+}
+
+dhcp6c_dbg_log() {
+  [ $debug_dhcp6c_config_sh = 1 ] && {
+    local date=`date +%s`
+    local msg="$@"
+    msg="${date}: ${msg}"
+    echo "$msg" >> $dhcp6c_config_sh_log_file
+  }
+}
+
+
+DHCP6C_REQUEST_OPTIONS='domain_name_servers domain_name ntp_servers sip_server_address sip_domain_name nis_server_address nis_domain_name nisp_server_address nisp_domain_name bcmcs_server_address bcmcs_domain_name'
+
+get_ifname() {
+    local interface=$1
+    printf $(uci get network6.$interface.ifname)
+    return 0
+}
+
+get_device() {
+    local interface=$1
+    local ifname=$2
+    local device
+    
+    include /lib/network
+    scan_interfaces
+    config_get device "$interface" device
+    grep -qE "^ *$device:" /proc/net/dev && \
+        printf '%s\n' "$device" || \
+        printf '%s\n' "$ifname"
+    return 0
+}
+
+dhcp6c_write_duid() {
+    local mac="${1:-$(ifconfig "$2" | sed -ne 's/[[:space:]]*$//; s/.*HWaddr //p')}"
+    local pat="[0-9A-F][0-9A-F]"
+
+    case "$mac" in
+        # exactly 6 octets -> assume type 3 (DUID-LL - RFC3315, 9.4)
+        $pat:$pat:$pat:$pat:$pat:$pat)
+            local oIFS="$IFS"; IFS=":"; set -- $mac; IFS="$oIFS"
+
+            # low endian
+            if [ "$(printf \\1 | hexdump -n1 -ve '8/2 "%04x"')" = "0001" ]; then
+                printf \\x0a\\x00
+
+            # big endian
+            else
+                printf \\x00\\x0a
+            fi
+
+            printf \\x00\\x03\\x00\\x06\\x$1\\x$2\\x$3\\x$4\\x$5\\x$6
+            dhcp6c_dbg_log "Using MAC address DUID 00:03:00:06:$1:$2:$3:$4:$5:$6"
+        ;;
+        # at least 7 octets -> could be type 1 or type 2
+        $pat:$pat:$pat:$pat:$pat:$pat:*)
+            local len_id=":$(echo "$mac" | sed -e 's/[^:]//g')"
+            local len_hi=$(printf "%02x" $((${#len_id} / 0xFF)) )
+            local len_lo=$(printf "%02x" $((${#len_id} % 0xFF)) )
+
+            # low endian
+            if [ "$(printf \\1 | hexdump -n1 -ve '8/2 "%04x"')" = "0001" ]; then
+                printf \\x$len_lo\\x$len_hi
+
+            # big endian
+            else
+                printf \\x$len_hi\\x$len_lo
+            fi
+
+            printf $(echo "$mac" | sed -e 's/^/\\x/; s/:/\\x/g')
+            dhcp6c_dbg_log "Using user provided DUID $mac"
+        ;;
+        *)
+            dhcp6c_dbg_log "Unable to derive DUID from interface '$ifname' and no valid user DUID given"
+        ;;
+    esac
+}
+
+dhcp6c_write_interface() {
+    local cfg=$1
+    local pd_interface
+    local sla_id
+    local sla_len
+    local enabled
+
+    config_get_bool enabled "$cfg" enabled 0
+
+    if [ $enabled -ne 0 ]; then
+        config_get pd_interface "$cfg" pd_interface
+        config_get sla_id "$cfg" sla_id
+        config_get sla_len "$cfg" sla_len
+
+        printf '\tprefix-interface %s {\n' "$(get_ifname $pd_interface)"
+        printf '\t\tsla-id %s;\n' "$sla_id"
+        printf '\t\tsla-len %s;\n' "$sla_len"
+        printf '\t};\n'
+    fi
+}
+
+dhcp6c_write_request() {
+    printf '\trequest %s;\n' $1 | sed -e s/_/-/g
+}
+
+dhcp6c_write_config() {
+    local interface="$1"
+    local ifname=$(get_ifname "$interface")
+    printf 'interface %s {\n' "$ifname"
+
+    local pd
+    config_get_bool pd $interface pd 0
+    [ $pd -ne 0 ] && printf '\tsend ia-pd 0;\n'
+
+    local na
+    config_get_bool na $interface na 0
+    [ $na -ne 0 ] && printf '\tsend ia-na 0;\n'
+
+    local rapid_commit
+    config_get_bool rapid_commit $interface rapid_commit 0
+    [ $rapid_commit -ne 0 ] && printf '\tsend rapid-commit;\n'
+
+    local script
+    config_get script $interface script
+    [ "$script" != "" ] && printf '\tscript "%s";\n' "$script"
+
+    local request
+    local value
+    for request in $DHCP6C_REQUEST_OPTIONS; do
+        config_get_bool value $interface "$request" 0
+        [ $value -ne 0 ] && dhcp6c_write_request "$request"
+    done
+
+    printf '};\n\n'
+
+    if [ $pd -ne 0 ]; then
+        printf 'id-assoc pd 0 {\n'
+        dhcp6c_write_interface $interface
+        printf '};\n\n'
+    fi
+
+    if [ $na -ne 0 ]; then
+        printf 'id-assoc na 0 {\n'
+        printf '};\n\n'
+    fi
+
+    return 0
+}
+
+start_dhcp6c() {
+    local interface="$1"
+    local ifname=$(get_ifname "$interface")
+    dhcp6c_dbg_log "start_dhcp6c(): [$interface] [$ifname]"
+    [ -z "$ifname" ] && {
+        dhcp6c_dbg_log "start_dhcp6c(): interface name is empty, ifname=[$ifname]"
+        return 2
+    }
+
+    local pidfile
+    pidfile="/var/run/dhcp6c_$ifname.pid"
+    [ -e $pidfile ] && {
+        dhcp6c_dbg_log "start_dhcp6c(): dhcp6c is already running, pidfile=[$pidfile]"
+        return 2
+    }
+
+    local enabled
+    config_get_bool enabled $interface enabled 0
+    [ $enabled -eq 0 ] && {
+        dhcp6c_dbg_log "start_dhcp6c(): dhcp6c is disable on interface [$interface]"
+        return 2
+    }
+    #do not start if the interface is a downstream interface
+    config_get downstream $interface downstream
+    [ -n "$downstream"  ] && {
+        dhcp6c_dbg_log "start_dhcp6c(): dhcp6c is disable on interface [$interface] (downstream)"
+        return 2
+    }
+
+    local duid_file
+    [ -d "/var/etc" ] || mkdir "/var/etc/"
+    duid_file="/var/etc/dhcp6c_$ifname.duid"
+
+    local user_duid
+    config_get user_duid $interface duid
+    dhcp6c_write_duid "$user_duid" "$ifname" > $duid_file
+
+    local config_file="/var/dhcp6c_$ifname.conf"
+    dhcp6c_write_config "$interface" > $config_file
+
+    local debug
+    local debug_option
+    config_get_bool debug $interface debug 0
+    [ $debug -eq 1 ] && debug_option="-D"
+
+    /usr/sbin/dhcp6c -c $config_file -p $pidfile $debug_option $ifname
+
+    dhcp6c_dbg_log "start_dhcp6c(): cfgfile is $config_file"
+    dhcp6c_dbg_log "start_dhcp6c(): pidfile is $pidfile"
+    dhcp6c_dbg_log "start_dhcp6c(): duidfile is $duid_file"
+    dhcp6c_dbg_log "start_dhcp6c(): is succesed"
+
+    return 0
+}
+
+stop_dhcp6c() {
+    local interface="$1"
+    local ifname=$(get_ifname "$interface")
+    dhcp6c_dbg_log "stop_dhcp6c(): [$interface] [$ifname]"
+    [ -z "$ifname" ] && {
+        dhcp6c_dbg_log "stop_dhcp6c(): interface name is empty, ifname=[$ifname]"
+        return 2
+    }
+
+    local pidfile="/var/run/dhcp6c_$ifname.pid"
+    [ ! -e $pidfile ] && {
+        dhcp6c_dbg_log "stop_dhcp6c(): pid file doesn't exist, pidfile=[$pidfile]"
+        return 2
+    }
+
+    local pid=$(cat "$pidfile" 2>/dev/null)
+    [ ! -n $pid ] && {
+        dhcp6c_dbg_log "stop_dhcp6c(): pid doesn't find, pid=[$pid]"
+        return 2
+    }
+
+    dhcp6c_dbg_log "stop_dhcp6c(): pidfile=[$pidfile],pid=[$pid]"
+
+    local ret
+    lock "/var/lock/dhcp6c_$ifname"
+    if grep dhcp6c "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
+        dhcp6c_dbg_log "stop_dhcp6c(): killing $pid"
+        kill $pid
+        ret=0
+    else
+        dhcp6c_dbg_log "stop_dhcp6c(): $pid doesn't exist or it is not dhcp6c"
+        ret=1
+    fi
+    lock -u "/var/lock/dhcp6c_$ifname"
+
+    local cfgfile="/var/etc/dhcp6c_$ifname.conf"
+    local duidfile="/var/etc/dhcp6c_$ifname.duid"
+    rm -f $cfgfile $pidfile $duidfile
+
+    dhcp6c_dbg_log "stop_dhcp6c(): cfgfile is $cfgfile"
+    dhcp6c_dbg_log "stop_dhcp6c(): pidfile is $pidfile"
+    dhcp6c_dbg_log "stop_dhcp6c(): duidfile is $duidfile"
+
+    return $ret
+}
+
+clean_dhcp6c() {
+    local files=`ls /var/run/dhcp6c_*`    
+    for f in $files; do
+	p=$(cat "$f" 2>/dev/null)
+	for dev in $CONFIG_SECTIONS; do
+            ifname=`uci get network6.$dev.ifname`
+	    [ "/var/run/dhcp6c_${ifname}.pid" = "$f" ] && {
+		p=
+		break
+	    }
+	done
+	[ -n "$p" ] && {
+	    kill "$p"
+	    rm -f "/var/etc/dhcp6c_${ifname}.conf"
+	    rm -f "/var/etc/dhcp6c_${ifname}.duid"
+	}
+    done
+}
+
+start() {
+    local dev
+
+    dhcp6c_dbg_log "Start dhcp6c on all interfaces"
+
+    for dev in $CONFIG_SECTIONS; do
+        start_dhcp6c $dev
+    done
+
+    dhcp6c_dbg_log "Start dhcp6c on all interfaces is completed"
+    return 0
+}
+
+stop() {
+    local dev
+
+    dhcp6c_dbg_log "Stop dhcp6c on all interfaces"
+
+    for dev in $CONFIG_SECTIONS; do
+        stop_dhcp6c $dev
+    done
+
+    dhcp6c_dbg_log "Stop dhcp6c on all interfaces is completed"
+    return 0
+}
+
+restart() {
+    reload
+}
+
+reload() {
+    dhcp6c_dbg_log "Reload function started"
+
+    local dev
+    for dev in $CONFIG_SECTIONS; do
+        ifchanged=$(env | grep "CHANGED_dhcp6c_$dev=")
+        [ -n "$APPLY_CHANGES" -a -z "$ifchanged" ] || {
+            dhcp6c_dbg_log "stop_dhcp6c $dev"
+            stop_dhcp6c $dev
+            dhcp6c_dbg_log "start_dhcp6c $dev"
+            start_dhcp6c $dev
+        }
+    done
+
+    #remove deleted structures
+    clean_dhcp6c
+
+    dhcp6c_dbg_log "Reload function completed"
+    return 0
+}
+

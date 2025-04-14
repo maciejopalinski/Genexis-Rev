@@ -1,0 +1,217 @@
+#!/bin/sh
+
+# Include common function script
+. /etc/functions.sh
+
+# Define constants
+debug_dhcp6c_state=0
+dhcp6c_state_log_file=/tmp/dhcp6c_state.log
+
+# Define local functions
+dbg_log() {
+    [ $debug_dhcp6c_state = 1 ] && {
+        local date=`date +%s`
+        local msg="$@"
+        msg="${date}: ${msg}"
+        logger -s -t dhcp6c_state -p daemon.debug "${msg}"
+        echo "$msg" >> $dhcp6c_state_log_file
+    }
+}
+
+ma_write() {
+    dbg_log "$1 > /tmp/mafifo"
+    echo "$1" >  /tmp/mafifo
+}
+
+radvd_ra_enable() {
+    local cfg=$1
+    local ignore
+
+    dbg_log "radvd_ra_enable(): start [$cfg]"
+
+    config_get_bool ignore "$cfg" ignore 0
+
+    if [ -n "$new_pd_addr" ]; then
+        [ "$ignore" -eq 0 ] && return 0
+        dbg_log "radvd_ra_enable(): enable radvd"
+        ma_write "radvd.$cfg.ignore=0"
+    else
+        [ "$ignore" -ne 0 ] && return 0
+	#don't disable radvd when pd is enabled, new_pd_addr may be cleared
+	#if other optiones are received, e.g. na. This script can't tell
+	#if a pd or a na is received which is bad. 
+        [ "$uci_pd" -ne 0 ] && return 0
+        dbg_log "radvd_ra_enable(): disable radvd"
+        ma_write "radvd.$cfg.ignore=1"
+    fi
+}
+
+radvd_pd_enable() {
+    local cfg=$1
+    local ignore
+
+    dbg_log "radvd_pd_enable(): start [$cfg]"
+
+    config_get_bool ignore "$cfg" ignore 0
+
+    if [ -n "$new_pd_addr" ] && [ "$uci_sla_len" -eq "$sla_len" ]; then
+        [ "$ignore" -eq 0 ] && return 0
+        dbg_log "radvd_pd_enable(): enable pd"
+        ma_write "radvd.$cfg.ignore=0"
+    else
+        [ "$ignore" -ne 0 ] && return 0
+	#don't disable radvd when pd is enabled, new_pd_addr may be cleared
+	#if other optiones are received, e.g. na. This script can't tell
+	#if a pd or a na is received which is bad. 
+        [ "$uci_pd" -ne 0 ] && return 0
+        dbg_log "radvd_pd_enable(): disable pd"
+        ma_write "radvd.$cfg.ignore=1"
+    fi
+}
+
+radvd_pd_config() {
+    local cfg=$1
+    local ignore
+    local prefix
+    local pltime
+    local vltime
+
+    dbg_log "radvd_pd_config(): start [$cfg]"
+
+    config_get_bool ignore "$cfg" ignore 0
+    [ "$ignore" -eq 0 ] && return 0
+
+    config_get prefix "$cfg" prefix
+    config_get pltime "$cfg" AdvPreferredLifetime
+    config_get vltime "$cfg" AdvValidLifetime
+
+    #request new prefix length if stored and received sla len is not equal
+    [ "$uci_sla_len" -eq "$sla_len" ] || ma_write "dhcp6c.$interface.sla_len=$sla_len"
+
+    if [ -n "$new_pd_addr" ]; then
+        dbg_log "radvd_pd_config(): set prefix [$new_pd_addr]"
+        [ "$prefix" != "$new_pd_addr" ] && {
+           local pf_prefix=`echo $new_pd_addr | awk -F "/" '{printf $1}'`
+           pf_prefix=$pf_prefix/64
+#           local pf_prefix=`echo "${new_pd_addr%/[0-9][0-9]}/64"`
+           dbg_log "radvd_pd_config(): we change prefix from [$new_pd_addr] to [$pf_prefix]"
+           ma_write "radvd.$cfg.prefix=$pf_prefix"
+        }
+    fi
+
+    if [ -n "$new_pd_pltime" ]; then
+        dbg_log "radvd_pd_config(): set pltime [$new_pd_pltime]"
+        [ "$pltime" != "$new_pd_pltime" ] && ma_write "radvd.$cfg.AdvPreferredLifetime=$new_pd_pltime"
+    fi
+
+    if [ -n "$new_pd_vltime" ]; then
+        dbg_log "radvd_pd_config(): set vltime [$new_pd_vltime]"
+        [ "$vltime" != "$new_pd_vltime" ] && ma_write "radvd.$cfg.AdvValidLifetime=$new_pd_vltime"
+    fi
+}
+
+radvd_rdnss_config() {
+    local cfg=$1
+    local ignore
+    local dns
+    local dns_request=`uci get dhcp6c.$interface.domain_name_servers`
+
+    dbg_log "radvd_rdnss_config(): start [$cfg], dns_request [$dns_request]"
+
+    [ "$dns_request" -eq 0 ] && return 0
+
+    config_get_bool ignore "$cfg" ignore 0
+    config_get      dns    "$cfg" addr
+
+    if [ -n "$new_domain_name_servers" ]; then
+        [ "$ignore" -ne 0 ] && ma_write "radvd.$cfg.ignore=0"
+        [ "$dns" != "$new_domain_name_servers" ] && ma_write "radvd.$cfg.addr=$new_domain_name_servers"
+    else
+        [ "$ignore" -ne 1 ] && ma_write "radvd.$cfg.ignore=1"
+    fi
+}
+
+radvd_dnssl_config() {
+    local cfg=$1
+    local ignore
+    local suffix
+    local dnssl_request=`uci get dhcp6c.$interface.domain_name`
+
+    dbg_log "radvd_dnssl_config(): start [$cfg], dnssl_request [$dnssl_request]"
+
+    [ "$dnssl_request" -eq 0 ] && return 0
+
+    config_get_bool ignore "$cfg" ignore 0
+    config_get      suffix "$cfg" suffix
+
+    if [ -n "$new_domain_name" ]; then
+        [ "$ignore" -ne 0 ] && ma_write "radvd.$cfg.ignore=0"
+        [ "$suffix" != "$new_domain_name" ] && ma_write "radvd.$cfg.suffix=$new_domain_name"
+    else
+        [ "$ignore" -ne 1 ] && ma_write "radvd.$cfg.ignore=1"
+    fi
+}
+
+# Start of the operation
+# Prepare log file
+[ -f /tmp/debug_dhcp6c_state ] && {
+    debug_dhcp6c_state=1
+    local msg="dhcp6c_state[$0 $@] started at $(date)"
+
+    logger -s -t dhcp6c_state -p daemon.debug "$msg"
+    echo "$msg" >> $dhcp6c_state_log_file
+}
+
+# Log parameters
+if [ -n $ifname ]; then
+    local vlan_number=${ifname##*.}
+    local interface=vlan$vlan_number
+fi
+
+dbg_log "interface=$interface"
+dbg_log "new_domain_name_servers=$new_domain_name_servers"
+dbg_log "new_domain_name=$new_domain_name"
+dbg_log "new_pd_addr=$new_pd_addr"
+dbg_log "new_pd_vltime=$new_pd_vltime"
+dbg_log "new_pd_pltime=$new_pd_pltime"
+
+#don't disable radvd when pd is enabled, new_pd_addr may be cleared
+#if other optiones are received, e.g. na. This script can't tell
+#if a pd or a na is received which is bad. 
+uci_pd=`uci get dhcp6c.$interface.pd`
+#Check the size of the prefix and don't hand out less than 64 bits. 
+#As no greater then 64 is supported, only 64 is configured
+#on a downstream interface. This is for 1.6.1 and may be changed in the 
+#future when we have more knowledge in this area.
+#Fix bug #24936!
+uci_sla_len=`uci get dhcp6c.$interface.sla_len`
+[ -z "$uci_sla_len" ] && uci_sla_len=0
+sla_len="$uci_sla_len"
+[ -z "$new_pd_addr" ] || {
+    #assume only one slash in the prefix
+    local index=`echo ${new_pd_addr#*\/}`
+    [ "$index" -lt 64 ] && {
+	let sla_len=64-$index
+	new_pd_addr=`echo $new_pd_addr|cut -d'/' -f1`
+	new_pd_addr=${new_pd_addr}/64
+    }
+}
+
+# Load radvd to setup uci of it
+config_load radvd
+
+# implement pd and restart radvd
+config_foreach radvd_ra_enable interface
+config_foreach radvd_pd_enable prefix
+config_foreach radvd_pd_config prefix
+
+# Implement domain name servers! Do not update radvd if dns request is
+# disabled, i.e. when the O-flag is cleared and dns is received through SLAAC.
+# PIND is responsible of enable/disable dns flag
+config_foreach radvd_rdnss_config rdnss
+
+# Implement domain name servers! Do not update radvd if dns request is
+# disabled, i.e. when the O-flag is cleared and dns is received through SLAAC.
+# PIND is responsible of enable/disable dns flag
+config_foreach radvd_dnssl_config dnssl
+

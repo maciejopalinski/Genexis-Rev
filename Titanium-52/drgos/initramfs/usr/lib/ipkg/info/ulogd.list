@@ -1,0 +1,13 @@
+/
+/etc/
+/etc/ulogd.conf
+/etc/init.d/
+/etc/init.d/ulogd
+/etc/default/
+/etc/default/ulogd
+/usr/
+/usr/lib/
+/usr/lib/ulogd/
+/usr/lib/ulogd/ulogd_BASE.so
+/usr/sbin/
+/usr/sbin/ulogd

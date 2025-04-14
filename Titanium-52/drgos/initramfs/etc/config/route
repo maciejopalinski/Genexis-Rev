@@ -1,0 +1,5 @@
+
+# Copyright (C) 2006 OpenWrt.org
+
+config router  general
+        option routes_count      0

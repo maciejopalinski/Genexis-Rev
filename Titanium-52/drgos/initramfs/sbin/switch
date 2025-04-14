@@ -1,0 +1,13 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+
+include /lib/network
+
+case "$1" in
+    config) switch_default_config;;
+    setup) switch_setup;;
+    down) ;;
+    *) echo "Unknown switch command";;
+esac

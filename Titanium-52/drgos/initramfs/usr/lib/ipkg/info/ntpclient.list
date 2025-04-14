@@ -1,0 +1,15 @@
+/
+/etc/
+/etc/config/
+/etc/config/ntpclient
+/etc/init.d/
+/etc/init.d/ntpclient
+/etc/hotplug.d/
+/etc/hotplug.d/iface/
+/etc/hotplug.d/iface/20-ntpclient
+/usr/
+/usr/sbin/
+/usr/sbin/adjtimex
+/usr/sbin/ntpclient.sh
+/usr/sbin/rate.awk
+/usr/sbin/ntpclient

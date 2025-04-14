@@ -1,0 +1,8 @@
+/
+/etc/
+/etc/uci-defaults/
+/lib/
+/lib/config/
+/lib/config/uci.sh
+/sbin/
+/sbin/uci

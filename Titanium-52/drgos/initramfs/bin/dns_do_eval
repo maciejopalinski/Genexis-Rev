@@ -1,0 +1,5 @@
+#!/bin/sh
+# Copyright (C) 2011 by PacketFront AB
+touch /tmp/retry_dnseval
+[ -z "$(pidof dnseval)" ] && /bin/dnseval $1 &
+

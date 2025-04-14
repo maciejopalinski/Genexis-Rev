@@ -1,0 +1,509 @@
+#!/bin/sh
+usage() {
+  echo ""
+  echo " Usage: $0 [OPTION]"
+  echo " Options:"
+  echo "   load <CFG_UCI_DATA>"
+  echo "   set <CFG_UCI_DATA>"
+  exit 1
+}
+
+notify_to_cwmp()
+{
+  if [ "X$CFG_TYPE" = "Xset" ]; then
+    /sbin/cwmp_notify set $1 $2
+  fi
+}
+
+codec_index()
+{
+  local codec_type=$1
+  if [ "X$codec_type" = "XG711A" ]; then
+    return 1
+  elif [ "X$codec_type" = "XG711U" ]; then
+    return 2
+  elif [ "X$codec_type" = "XG729" ]; then
+    return 3
+  else
+    return 0
+  fi
+}
+
+enable_codec_priority()
+{
+  local vp_idx=$1
+  local line_idx=$2
+  local codec_idx=$3
+  local profile_number=$4
+  local line_number=$5
+  local priority=$6
+  local tmp_value=""
+  
+  if [ $codec_idx -ge 1 ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable`
+    if [ "X$tmp_value" != "X1" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable=1
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.Enable 1
+      fi
+      tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_priority`
+      if [ "X$tmp_value" != "X$priority" ]; then
+        /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_priority=$priority
+        if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+          notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.Priority $priority
+        fi
+      fi
+    fi
+  fi
+}
+
+disable_codec()
+{
+  local vp_idx=$1
+  local line_idx=$2
+  local codec_idx=$3
+  local profile_number=$4
+  local line_number=$5
+  local tmp_value=""
+
+  if [ $codec_idx -ge 1 ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable`
+    if [ "X$tmp_value" != "X0" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable=0
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.Enable 0
+      fi
+    fi
+  fi
+}
+
+line_codec_notify_ep()
+{
+  local vp_idx=$1
+  local line_idx=$2
+  local codec1=$3
+  local codec2=$4
+  local codec3=$5
+  local codec1_type=0
+  local codec2_type=0
+  local codec3_type=0
+  local profile_number=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.profile_number`
+  local line_number=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_line_number`
+
+  local tmp_value=""
+  if [ "X$codec1" != "X" ]; then
+    tmp_value=`/sbin/uci -q get sip.$codec1.codec`
+    codec_index $tmp_value
+    codec1_type=$?
+  fi
+  if [ "X$codec2" != "X" ]; then
+    tmp_value=`/sbin/uci -q get sip.$codec2.codec`
+    codec_index $tmp_value
+    codec2_type=$?
+  fi
+  if [ "X$codec3" != "X" ]; then
+    tmp_value=`/sbin/uci -q get sip.$codec3.codec`
+    codec_index $tmp_value
+    codec3_type=$?
+  fi
+
+  enable_codec_priority $vp_idx $line_idx $codec1_type $profile_number $line_number 1
+  enable_codec_priority $vp_idx $line_idx $codec2_type $profile_number $line_number 2
+  enable_codec_priority $vp_idx $line_idx $codec3_type $profile_number $line_number 3
+
+  if [ "X1" != "X$codec1_type" -a "X1" != "X$codec2_type" -a "X1" != "X$codec3_type" ]; then
+    disable_codec $vp_idx $line_idx 1 $profile_number $line_number
+  fi
+  if [ "X2" != "X$codec1_type" -a "X2" != "X$codec2_type" -a "X2" != "X$codec3_type" ]; then
+    disable_codec $vp_idx $line_idx 2 $profile_number $line_number
+  fi
+  if [ "X3" != "X$codec1_type" -a "X3" != "X$codec2_type" -a "X3" != "X$codec3_type" ]; then
+    disable_codec $vp_idx $line_idx 3 $profile_number $line_number
+  fi
+}
+
+line_notify()
+{
+  local vp_idx=$1
+  local line_idx=$2
+  local pname="${uci_param_name##*\.}"
+  local pvalue=$uci_param_value
+  local tmp_value=""
+  local profile_number=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.profile_number`
+  local line_number=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_line_number`
+  if [ "X$pname" = "Xsip_proxy" ]; then
+    local host="${pvalue%%\,*}"
+    local port="${pvalue##*\,}"
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_proxy_server`
+    if [ "X$tmp_value" != "X$host" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_proxy_server=$host
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.ProxyServer $host
+      fi
+    fi
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_proxy_server_port`
+    if [ "X$tmp_value" != "X$port" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_proxy_server_port=$port
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.ProxyServerPort $port
+      fi
+    fi
+  elif [ "X$pname" = "Xsip_outbound_proxy" ]; then
+    local host="${pvalue%%\:*}"
+    local port="${pvalue##*\:}"
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_outbound_proxy`
+    if [ "X$tmp_value" != "X$host" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_outbound_proxy=$host
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.OutboundServer $host
+      fi
+    fi
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_outbound_proxy_port`
+    if [ "X$tmp_value" != "X$port" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_outbound_proxy_port=$port
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.OutboundServerPort $port
+      fi
+    fi
+  elif [ "X$pname" = "Xcodecs" ]; then
+    local codec1=""
+    local codec2=""
+    local codec3=""
+    local _codec_r=""
+    codec1="${pvalue%%\,*}"
+    if [ "X$codec1" != "X" -a "X$codec1" != "X$pvalue" ]; then
+      _codec_r="${pvalue##*${codec1}\,}"
+      if [ "X${_codec_r}" != "X" ]; then
+        codec2="${_codec_r%%\,*}"
+        if [ "X$codec2" != "X" -a "X$codec2" != "X$_codec_r" ]; then
+          codec3="${_codec_r##*${codec2}\,}"
+        fi
+      fi
+    fi
+    echo "$codec1 $codec2 $codec3"
+    line_codec_notify_ep $vp_idx $line_idx $codec1 $codec2 $codec3
+  elif [ "X$pname" = "Xsip_register_expire" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_register_expires`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set  tr104.voiceprofile${vp_idx}.sip_register_expires=$pvalue
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.RegisterExpires $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xdtmf_signalling" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.dtmf_method`
+    if [ "X$pvalue" = "Xsip-info" -a "X$tmp_value" != "XSIPInfo" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.dtmf_method=SIPInfo
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.DTMFMethod SIPInfo
+      fi
+    elif [ "X$pvalue" = "Xinband" -a "X$tmp_value" != "InBand" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.dtmf_method=InBand
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.DTMFMethod InBand
+      fi
+    elif [ "X$pvalue" = "Xrfc2833" -a "X$tmp_value" != "XRFC2833" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.dtmf_method=RFC2833
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.DTMFMethod RFC2833
+      fi
+    fi
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.dtmf_method_g711`
+    if [ "X$pvalue" = "Xsip-info" -a "X$tmp_value" != "XSIPInfo" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.dtmf_method_g711=SIPInfo
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.DTMFMethodG711 SIPInfo
+      fi
+    elif [ "X$pvalue" = "Xinband" -a "X$tmp_value" != "InBand" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.dtmf_method_g711=InBand
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.DTMFMethodG711 InBand
+      fi
+    elif [ "X$pvalue" = "Xrfc2833" -a "X$tmp_value" != "XRFC2833" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.dtmf_method_g711=RFC2833
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.DTMFMethodG711 RFC2833
+      fi
+    fi
+  elif [ "X$pname" = "Xtransport_type" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_proxy_server_transport`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_proxy_server_transport=$pvalue
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.ProxyServerTransport $pvalue
+      fi
+    fi
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_user_agent_transport`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_user_agent_transport=$pvalue
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.UserAgentTransport $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xauth_user" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_sip_auth_user_name`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_sip_auth_user_name=$pvalue
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.SIP.AuthUserName $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xauth_pswd" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_sip_auth_password`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_sip_auth_password=$pvalue
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.SIP.AuthPassword $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xdomain" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_user_agent_domain`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_user_agent_domain=$pvalue
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.UserAgentDomain $pvalue
+      fi
+    fi
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_sip_uri`
+    local sip_uri_1=`echo "$tmp_value" | awk -F ":" '{if ($1 == "sip") {print $2}}'`
+    local sip_uri_phone_number=""
+    local sip_uri_domain=""
+    if [ "X$sip_uri_1" != "X" ]; then
+      sip_uri_phone_number=`echo "$sip_uri_1" | awk -F "@" '{if (NF >= 1) {print $1}}'`
+      sip_uri_domain=`echo "$sip_uri_1" | awk -F "@" '{if (NF >= 2) {print $2}}'`
+    fi
+    if [ "X$sip_uri_domain" != "X$pvalue" -a "X$sip_uri_domain" != "X" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_sip_uri=sip:$sip_uri_phone_number@$pvalue
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.SIP.URI sip:$sip_uri_phone_number@$pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xphone_number" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_sip_uri`
+    local sip_uri_1=`echo "$tmp_value" | awk -F ":" '{if ($1 == "sip") {print $2}}'`
+    local sip_uri_phone_number=""
+    local sip_uri_domain=""
+    if [ "X$sip_uri_1" != "X" ]; then
+      sip_uri_phone_number=`echo "$sip_uri_1" | awk -F "@" '{if (NF >= 1) {print $1}}'`
+      sip_uri_domain=`echo "$sip_uri_1" | awk -F "@" '{if (NF >= 2) {print $2}}'`
+    fi
+    if [ "X$sip_uri_phone_number" != "X$pvalue" ]; then
+      if [ "X$sip_uri_domain" != "X" ]; then
+        sip_uri_1=sip:$pvalue@$sip_uri_domain
+      else
+        sip_uri_1=sip:$pvalue
+      fi
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_sip_uri=$sip_uri_1
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.SIP.URI $sip_uri_1
+      fi
+    fi
+  elif [ "X$pname" = "Xsignaling_port" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.sip_user_agent_port`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.sip_user_agent_port=$pvalue
+      if [ $profile_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.SIP.UserAgentPort $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xenabled" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_enable`
+    if [ "X$pvalue" = "X0" -a "X$tmp_value" = "XEnabled" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_enable=Disabled
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.enable=Disabled
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Enable Disabled
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Enable Disabled
+      fi
+    elif [ "X$pvalue" = "X1" -a "X$tmp_value" = "XDisabled" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_enable=Enabled
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.enable=Enabled
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Enable Enabled
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Enable Enabled
+      fi
+    fi
+  elif [ "X$pname" = "Xclip" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_clip`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_clip=$pvalue
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.CallingFeatures.X_000F5D_Features.ClipEnable $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xcall_waiting_tone" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_callwaiting`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_callwaiting=$pvalue
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.CallingFeatures.CallWaitingEnable $pvalue
+      fi
+    fi
+  elif [ "X$pname" = "Xclip_country" ]; then
+    tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_clipregion`
+    if [ "X$tmp_value" != "X$pvalue" ]; then
+      /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_clipregion=$pvalue
+      if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+        notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.CallingFeatures.X_000F5D_Features.ClipRegion $pvalue
+      fi
+    fi
+  fi
+}
+
+codec_notify()
+{
+  local phy_line=$1
+  local codec_idx=$2
+  local codec_silence=$3
+  local codec_packetization=$4
+  local codec_seq=$5
+  local enable_flag=$6
+  local vp_idx=1
+  local line_idx=1
+  local phy_ref=0
+  local profile_number=0
+  local line_number=0
+  local tmp_value=""
+  while [ $vp_idx -le 2 ]; do
+    line_idx=1
+    while [ $line_idx -le 2 ]; do
+      profile_number=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.profile_number`
+      phy_ref=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_phy_reference_list`
+      if [ $phy_line -eq $phy_ref ]; then
+        line_number=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_line_number`
+        tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_silence_suppression`
+        if [ "X$tmp_value" != "X$codec_silence" ]; then
+          /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_silence_suppression=$codec_silence
+          if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+            notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.SilenceSuppression $codec_silence
+          fi
+        fi
+        tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_packetization_period`
+        if [ "X$tmp_value" != "X$codec_packetization" ]; then
+          /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_packetization_period=$codec_packetization
+          if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+            notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.PacketizationPeriod $codec_packetization
+          fi
+        fi
+        tmp_value=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable`
+        if [ "X$tmp_value" = "X0" -a $codec_seq -ge 1 -a $enable_flag -eq 1 ]; then
+          /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_priority=$codec_seq
+          /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable=1
+          if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+            notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.Enable 1
+            notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.Priority $codec_seq
+          fi
+        elif [ "X$tmp_value" = "X1" -a $enable_flag -eq 0 ]; then
+          /sbin/uci -q set tr104.voiceprofile${vp_idx}.line${line_idx}_codec${codec_idx}_enable=0
+          if [ $profile_number -ge 1 -a $line_number -ge 1 ]; then
+            notify_to_cwmp InternetGatewayDevice.Services.VoiceService.1.VoiceProfile.${profile_number}.Line.${line_number}.Codec.List.${codec_idx}.Enable 0
+          fi
+        fi
+      fi
+      line_idx=$(($line_idx +1))
+    done
+    vp_idx=$(($vp_idx +1))
+  done
+}
+
+travel_global_cfg()
+{
+  return 0
+}
+
+travel_line_cfg()
+{
+  local phy_line=$1
+  local vp_idx=1
+  local line_idx=1
+  local phy_ref=0
+  while [ $vp_idx -le 2 ]; do
+    line_idx=1
+    while [ $line_idx -le 2 ]; do
+      phy_ref=`/sbin/uci -q get tr104.voiceprofile${vp_idx}.line${line_idx}_phy_reference_list`
+      if [ -n "$phy_ref" ] && [ $phy_line -eq $phy_ref ]; then
+        line_notify $vp_idx $line_idx
+      fi
+      line_idx=$(($line_idx +1))
+    done
+    vp_idx=$(($vp_idx +1))
+  done
+}
+
+travel_codec_cfg()
+{
+  local codec_type=`/sbin/uci -q get $uci_prefix.codec`
+  local codec_name=`/sbin/uci -q get $uci_prefix.name`
+  local codec_silence=`/sbin/uci -q get $uci_prefix.silence_suppression`
+  local codec_packetization=`/sbin/uci -q get $uci_prefix.packetization_time`
+
+  [ -n "$codec_type" ] || return
+  [ -n "$codec_name" ] || return
+  [ -n "$codec_silence" ] || return
+  [ -n "$codec_packetization" ] || return
+
+  local codec_idx=0
+  if [ "X$codec_type" = "XG711A" ]; then
+    codec_idx=1
+  elif [ "X$codec_type" = "XG711U" ]; then
+    codec_idx=2
+  elif [ "X$codec_type" = "XG729" ]; then
+    codec_idx=3
+  fi
+
+  if [ $codec_idx -eq 0 ]; then
+    return
+  fi
+
+  local l1codecs=`/sbin/uci -q get sip.line1.codecs`
+  local l1result=`echo "$l1codecs" | /usr/bin/awk -F "," '{ for (i=1; i<=NF; i++) { if ($i==var_codec_name) print i }}' -v var_codec_name=$codec_name`
+  local l2codecs=`/sbin/uci -q get sip.line2.codecs`
+  local l2result=`echo "$l2codecs" | /usr/bin/awk -F "," '{ for (i=1; i<=NF; i++) { if ($i==var_codec_name) print i }}' -v var_codec_name=$codec_name`
+  if [ "X$l1result" != "X" ]; then
+    codec_notify 1 $codec_idx $codec_silence $codec_packetization $l1result 1
+  elif [ "X$codec_name" = "Xcwmpl1c1" -o "X$codec_name" = "Xcwmpl1c2" -o "X$codec_name" = "Xcwmpl1c3" ]; then
+    codec_notify 1 $codec_idx $codec_silence $codec_packetization 0 0
+  fi
+  if [ "X$l2result" != "X" ]; then
+    codec_notify 2 $codec_idx $codec_silence $codec_packetization $l2result 1
+  elif [ "X$codec_name" = "Xcwmpl2c1" -o "X$codec_name" = "Xcwmpl2c2" -o "X$codec_name" = "Xcwmpl2c3" ]; then
+    codec_notify 2 $codec_idx $codec_silence $codec_packetization 0 0
+  fi
+}
+
+CFG_TYPE="set"
+CFG_UCI_DATA=""
+
+if [ -n "$1" ]; then
+  CFG_TYPE=$1
+  shift
+fi
+
+if [ -n "$1" ]; then
+  CFG_UCI_DATA=$1
+  shift
+fi
+
+# check args
+if [ "X$CFG_TYPE" = "X" -o "X$CFG_UCI_DATA" = "X" ]; then
+  usage
+fi
+
+uci_param_name="${CFG_UCI_DATA%%\=*}"
+uci_param_value="${CFG_UCI_DATA#*=}"
+
+[ -n "$uci_param_name" ] || usage
+
+uci_prefix="${uci_param_name%\.*}"
+if [ "X$uci_prefix" = "Xsip.global" ]; then
+  travel_global_cfg
+elif [ "X$uci_prefix" = "Xsip.line1" ]; then
+  travel_line_cfg 1
+elif [ "X$uci_prefix" = "Xsip.line2" ]; then
+  travel_line_cfg 2
+else
+  codec_str=`/sbin/uci -q get $uci_prefix`
+  if [ "X$codec_str" = "Xcodec" ]; then
+    travel_codec_cfg
+  fi
+fi

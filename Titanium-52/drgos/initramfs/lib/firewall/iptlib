@@ -1,0 +1,584 @@
+
+# Copyright (c) 2011 PacketFront International AB. All rights reserved.
+#
+# This Software and its content are protected by the Swedish Copyright Act
+# (Sw: Upphovsr<E4>ttslagen) and, if applicable, the Swedish Patents Act
+# (Sw: Patentlagen). All and any copying and distribution of the software
+# and its content without authorization by PacketFront International AB is
+# prohibited. The prohibition includes every form of reproduction and
+# distribution.
+#
+#
+
+
+###############################################################
+      ## local dubug prints##
+##############################################################
+debug_ipt=0
+ipt_log_file=/tmp/ipt.log
+
+[ -f /tmp/debug_ipt ] && {
+  debug_ipt=1
+  local msg="ipt[$0 $@] started at $(date)"
+
+  logger -s -t ipt -p daemon.debug "$msg"
+  echo "$msg" >> $ipt_log_file
+}
+
+ipt_dbg_log() {
+  [ $debug_ipt = 1 ] && { 
+    local date=`date +%s`
+    local msg="$@"
+    msg="${date}: ${msg}"
+    logger -s -t ipt -p daemon.debug "${msg}"
+    echo "$msg" >> $ipt_log_file
+  }
+}
+
+
+###############################################################
+      ## don't use space##
+##############################################################
+
+ipt_filter_name () {
+    filter="$1"
+   
+    #replace escape character
+    filter=${filter/_/_u}
+    #replace space character
+    filter=${filter/ /_s}
+}
+
+###############################################################
+      ## Generic functions to add/delete/replace chains##
+##############################################################
+
+#arg1 chain
+#example use: ipt_chain_create "my-chain"
+ipt_chain_create()
+{
+    local chain="$1"
+    #validate input params
+    [ -z "$chain" ] && {
+	ipt_dbg_log "ipt_chain_create error, not an argument"
+	return
+    }    
+    #create chain
+    ipt_dbg_log "iptables -N $chain"
+    iptables -N $chain
+}
+
+#arg1 chain
+#example use: ipt_chain_delete "my-chain"
+ipt_chain_delete()
+{
+    local chain="$1"
+    #validate input params
+    [ -z "$chain" ] && {
+	ipt_dbg_log "ipt_chain_delete error, not an argument"
+	return
+    }
+    #delete chain
+    ipt_dbg_log "iptables -F $chain"
+    iptables -F $chain
+    ipt_dbg_log "iptables -X $chain"
+    iptables -X $chain
+}
+
+#arg1 chain
+#example use: ipt_chain_flush "my-chain"
+ipt_chain_flush()
+{
+    local chain="$1"
+    #validate input params
+    [ -z "$chain" ] && {
+	ipt_dbg_log "ipt_chain_flush error, not an argument"
+	return
+    }
+    #flush chain
+    ipt_dbg_log "iptables -F $chain"
+    iptables -F $chain
+}
+
+#arg1 chain
+#arg2 jump to chain
+#arg3 input interface
+#arg4 output interface
+#example use:ipt_chain_replace "INPUT" "mychain" "eth0" ""
+ipt_chain_replace()
+{
+    local chain="$1"
+    local jchain="$2"
+    local input="$3"
+    local output="$4"
+    local val=" "
+    #validate input params
+    [ -z "$chain" -o -z "$jchain" ] && {
+	ipt_dbg_log "ipt_chain_replace error, not an argument"
+	return
+    }
+
+    [ -z "$input" -a -z "$output" ] && {
+	ipt_dbg_log "ipt_chain_replace error, not an argument"
+	return
+    }
+   
+    [ -n "$input" ] && val="$val -i $input"
+    [ -n "$output" ] && val="$val -o $output"
+
+    #replace
+    ipt_dbg_log "iptables -R $chain $val -j $jchain"
+    iptables -R $chain $val -j $jchain
+}
+
+#arg1 chain 
+#arg2 jump to chain
+#arg3 input interface
+#arg4 output interface
+#example use:ipt_chain_replace "INPUT" "mychain" "eth0" ""
+ipt_chain_insert()
+{
+    local chain="$1"
+    local jchain="$2"
+    local input="$3"
+    local output="$4"
+    local val=" "
+    #validate input params
+    [ -z "$chain" -o -z "$jchain" ] && {
+	ipt_dbg_log "ipt_chain_insert error, not an argument"
+	return
+    }
+
+    [ -z "$input" -a -z "$output" ] && {
+	ipt_dbg_log "ipt_chain_insert error, not an argument"
+	return
+    }
+   
+    [ -n "$input" ] && val="$val -i $input"
+    [ -n "$output" ] && val="$val -o $output"
+
+   ipt_dbg_log "iptables -I $chain $val -j $jchain"
+   iptables -I $chain $val -j $jchain
+}
+
+#arg1 old chain
+#arg2 new chain
+#example use: ipt_chain_rename "my_chain_1" "my_chain2"
+ipt_chain_rename()
+{
+    local oldchain="$1"
+    local newchain="$2"
+    #validate input params
+    [ -z "$oldchain" -o -z "$newchain" ] && {
+	ipt_dbg_log "ipt_chain_rename error, not an argument"
+	return
+    }
+    #delete chain
+    ipt_dbg_log "iptables -E $oldchain $newchain"
+    iptables -E $oldchain $newchain
+}
+
+
+###############################################################
+      ## Generic functions to add rules##
+##############################################################
+#arg1 rule to add in "iptable" format
+#example use: ipt_rule_add "-A INPUT -s 1.1.1.1/24 -d 10.10.10.10/24 -p 17" 
+ipt_rule_add()
+{
+    local rule="$1"
+    #validate input params
+    [ -z "$rule" ] && {
+	ipt_dbg_log "ipt_rule_add error, not an argument"
+	return
+    }    
+    ipt_dbg_log "iptables $rule"
+    iptables $rule  
+}
+
+#arg1 chain
+#arg2 permission
+#arg3 srcaddr
+#arg4 srcmask
+#arg5 dstaddr
+#arg6 dstmask
+#arg7 protocol
+#example use: ipt_rule_add_ip my_chain permit 1.1.1.1 "" 2.2.2.2 "" 2 
+ipt_rule_add_ip()
+{
+    local chain="$1"
+    local permission="$2"
+    local srcaddr="$3"
+    local srcmask="$4"
+    local dstaddr="$5"
+    local dstmask="$6"
+    local protocol="$7"    
+    local rule=" "
+
+    #validate input params
+    if [ -z "$chain" ] || [ -z "$permission" ]; then
+	ipt_dbg_log "ipt_rule_add_ip error, not an argument"
+	return
+    fi	    
+    
+    [ -n "$srcaddr" -a "$srcaddr" != "any" ] && {
+	rule="$rule -s $srcaddr" 
+	[ -n "$srcmask" ] && {
+	    rule="$rule/$srcmask"    
+	}
+    }
+    
+    [ -n "$dstaddr" -a "$dstaddr" != "any" ] && {
+	rule="$rule -d $dstaddr" 
+	[ -n "$dstmask" ] && {
+	    rule="$rule/$dstmask"    
+	}
+    }
+    
+    [ -n "$protocol" -a "$protocol" != "any" ] && {
+	rule="$rule -p $protocol"    
+    }
+    
+    case $permission in
+        "permit" )
+	    rule="$rule -j ACCEPT"
+	    ;;
+        "deny")
+	    rule="$rule -j LOGDROP"
+	    ;;
+        "reject")
+	    rule="$rule -j REJECT"
+	    ;;
+        * )
+            acl_dbg_log "Error permission type not supported!!"
+	    return
+	;;
+    esac
+    
+    ipt_dbg_log "iptables -A $chain $rule"
+    iptables -A $chain $rule  
+}
+
+#arg1 chain
+#arg2 permission
+#arg3 srcaddr
+#arg4 srcmask
+#arg5 srcport
+#arg6 dstaddr
+#arg7 dstmask
+#arg8 dstport
+#example use: ipt_rule_add_udp my_chain permit 1.1.1.1 "" "34-35" 2.2.2.2 "" "42-43" 
+ipt_rule_add_udp()
+{
+    local chain="$1"
+    local permission="$2"
+    local srcaddr="$3"
+    local srcmask="$4"
+    local srcport="$5"
+    local dstaddr="$6"
+    local dstmask="$7"
+    local dstport="$8"    
+    local rule=" "
+
+    #validate input params
+    if [ -z "$chain" ] || [ -z "$permission" ]; then
+	ipt_dbg_log "ipt_rule_add_udp error, not an argument"
+	return
+    fi	    
+ 
+    rule="-p udp"
+       
+    [ -n "$srcaddr" -a "$srcaddr" != "any" ] && {
+	rule="$rule -s $srcaddr" 
+	[ -n "$srcmask" ] && {
+	    rule="$rule/$srcmask"    
+	}
+    }
+    
+    [ -n "$srcport" -a "$srcport" != "any" ] && {
+      	srcport=$(echo $srcport|sed 's/-/:/g')
+	rule="$rule --sport $srcport" 
+    }
+
+    [ -n "$dstaddr" -a "$dstaddr" != "any" ] && {
+	rule="$rule -d $dstaddr" 
+	[ -n "$dstmask" ] && {
+	    rule="$rule/$dstmask"    
+	}
+    }
+
+    [ -n "$dstport" -a "$dstport" != "any" ] && {
+      	dstport=$(echo $dstport|sed 's/-/:/g')
+	rule="$rule --dport $dstport" 
+    }
+ 
+    case $permission in
+        "permit" )
+	    rule="$rule -j ACCEPT"
+	    ;;
+        "deny")
+	    rule="$rule -j LOGDROP"
+	    ;;
+        "reject")
+	    rule="$rule -j REJECT"
+	    ;;
+        * )
+            acl_dbg_log "Error permission type not supported!!"
+	    return
+	;;
+    esac
+     
+    ipt_dbg_log "iptables -A $chain $rule"
+    iptables -A $chain $rule  
+}
+#arg1 chain
+#arg2 permission
+#arg3 srcaddr
+#arg4 srcmask
+#arg5 srcport
+#arg6 dstaddr
+#arg7 dstmask
+#arg8 dstport
+#arg9 flags
+#example use: ipt_rule_add_tcp my_chain permit 1.1.1.1 "" "34-35" 2.2.2.2 "" "42-43" "SYN" 
+ipt_rule_add_tcp()
+{
+    local chain="$1"
+    local permission="$2"
+    local srcaddr="$3"
+    local srcmask="$4"
+    local srcport="$5"
+    local dstaddr="$6"
+    local dstmask="$7"
+    local dstport="$8"    
+    local flags="$9"    
+    local rule=" "
+
+    #validate input params
+    if [ -z "$chain" ] || [ -z "$permission" ]; then
+	ipt_dbg_log "ipt_rule_add_tcp error, not an argument"
+	return
+    fi	    
+
+    rule="-p tcp"
+        
+    [ -n "$srcaddr" -a "$srcaddr" != "any" ] && {
+	rule="$rule -s $srcaddr" 
+	[ -n "$srcmask" ] && {
+	    rule="$rule/$srcmask"    
+	}
+    }
+    
+    [ -n "$srcport" -a "$srcport" != "any" ] && {
+      	srcport=$(echo $srcport|sed 's/-/:/g')
+	rule="$rule --sport $srcport" 
+    }
+
+    [ -n "$dstaddr" -a "$dstaddr" != "any" ] && {
+	rule="$rule -d $dstaddr" 
+	[ -n "$dstmask" ] && {
+	    rule="$rule/$dstmask"    
+	}
+    }
+
+    [ -n "$dstport" -a "$dstport" != "any" ] && {
+      	dstport=$(echo $dstport|sed 's/-/:/g')
+	rule="$rule --dport $dstport" 
+    }
+
+    [ -n "$flags" -a "$flags" != "any" ] && { 
+	case $flags in
+            "ack" )
+	        rule="$rule --tcp-flags ACK"
+	        ;;
+            "fin" )
+	        rule="$rule --tcp-flags FIN"
+	        ;;
+            "rst" )
+	        rule="$rule --tcp-flags RST"
+	        ;;
+            "syn" )
+	        rule="$rule --tcp-flags SYN"
+	        ;;
+            "urg" )
+	        rule="$rule --tcp-flags URG"
+	        ;;
+            * )
+                acl_dbg_log "TCP flags type not supported!!"
+	        return
+	        ;;
+        esac
+
+    }
+ 
+    case $permission in
+        "permit" )
+	    rule="$rule -j ACCEPT"
+	    ;;
+        "deny")
+	    rule="$rule -j LOGDROP"
+	    ;;
+        "reject")
+	    rule="$rule -j REJECT --reject-with tcp-reset"
+	    ;;
+        * )
+            acl_dbg_log "Error permission type not supported!!"
+	    return
+	;;
+    esac
+    
+    ipt_dbg_log "iptables -A $chain $rule"
+    iptables -A $chain $rule  
+}
+
+#arg1 chain
+#arg2 permission
+#arg3 srcaddr
+#arg4 srcmask
+#arg5 dstaddr
+#arg6 dstmask
+#arg7 notification
+#example use: ipt_rule_add_ip my_chain permit 1.1.1.1 "" 2.2.2.2 "" "" 
+ipt_rule_add_icmp()
+{
+    local chain="$1"
+    local permission="$2"
+    local srcaddr="$3"
+    local srcmask="$4"
+    local dstaddr="$5"
+    local dstmask="$6"
+    local notification="$7"    
+    local rule=" "
+
+    #validate input params
+    if [ -z "$chain" ] || [ -z "$permission" ]; then
+	ipt_dbg_log "ipt_rule_add_icmp error, not an argument"
+	return
+    fi	    
+    
+    rule="-p icmp"
+
+    [ -n "$srcaddr" -a "$srcaddr" != "any" ] && {
+	rule="$rule -s $srcaddr" 
+	[ -n "$srcmask" ] && {
+	    rule="$rule/$srcmask"    
+	}
+    }
+    
+    [ -n "$dstaddr" -a "$dstaddr" != "any" ] && {
+	rule="$rule -d $dstaddr" 
+	[ -n "$dstmask" ] && {
+	    rule="$rule/$dstmask"    
+	}
+    }
+
+    
+    #TODO how to set the destination unreacable codes
+    [ -n "$notification" ] && {
+	case $notification in
+      	    "echo")
+		#rule="$rule --icmp-type echo"
+		rule="$rule --icmp-type 8"
+    		;;
+            "echo-reply")
+		#rule="$rule --icmp-type echo-reply"
+		rule="$rule --icmp-type 0"
+    		;;
+	    "host-unreachable")
+		#rule="$rule --icmp-type host-unreachable"
+		rule="$rule --icmp-type 3"
+    		;;
+            "net-unreachable")
+		#rule="$rule --icmp-type net-unreachable"
+		rule="$rule --icmp-type 3"
+    		;;
+            "unreachable")
+		#rule="$rule --icmp-type unreachable"
+		rule="$rule --icmp-type 3"
+    		;;
+            * )
+		acl_dbg_log "Error permission type not supported!!"
+	    	return
+		;;
+        esac
+    }   
+    
+    case $permission in
+        "permit" )
+	    rule="$rule -j ACCEPT"
+	    ;;
+        "deny")
+	    rule="$rule -j LOGDROP"
+	    ;;
+        "reject")
+	    rule="$rule -j REJECT"
+	    ;;
+        * )
+            acl_dbg_log "Error permission type not supported!!"
+	    return
+	    ;;
+    esac
+    
+    ipt_dbg_log "iptables -A $chain $rule"
+    iptables -A $chain $rule  
+}
+
+#arg1 default chain
+#arg2 input
+#arg3 output
+#arg4 chain
+#example use: ipt_rule_delete "INPUT" "eth0" "" "myacl"  
+ipt_rule_delete()
+{
+    local dchain="$1"
+    local input="$2"
+    local output="$3"
+    local chain="$4"
+    local rule=" "
+    #validate input params
+    [ -z "$dchain" -o -z "$chain" ] && {
+	ipt_dbg_log "ipt_rule_delete error, not an argument"
+	return
+    }    
+
+    #replace chain
+    case $input in
+        "any"|"ANY"|"*" )
+	    true
+	    ;;
+        * )
+	    [ -n "$input" ] && rule="$rule -i $input"        
+	    ;;
+    esac
+
+    case $input in
+        "any"|"ANY"|"*" )
+	    true
+	    ;;
+        * )
+	    [ -n "$output" ] && rule="$rule -o $output"
+	    ;;
+    esac
+
+    
+
+    ipt_dbg_log "iptables -D $dchain $rule -j $chain"
+    iptables -D $dchain $rule -j $chain
+}
+#arg1 default chain
+#erg2 rulenum
+#example use: ipt_rulenum_delete "INPUT" "2"  
+ipt_rulenum_delete()
+{
+    local chain="$1"
+    local rulenum="$2"
+    #validate input params
+    [ -z "$chain" -o -z "$rulenum" ] && {
+	ipt_dbg_log "ipt_rulenum_delete error, not an argument"
+	return
+    }    
+
+   
+    ipt_dbg_log "iptables -D $chain $rulenum"
+    iptables -D $chain $rulenum
+}

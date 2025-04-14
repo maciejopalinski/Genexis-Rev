@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+
+START=23
+
+system_config() {
+	local cfg="$1"
+	local hostname
+	
+	config_get hostname "$cfg" hostname
+	echo "${hostname:-$R}" > /proc/sys/kernel/hostname
+
+	config_get conloglevel "$cfg" conloglevel
+	[ -n "$conloglevel" ] && dmesg -n "$conloglevel"
+	
+	config_get timezone "$cfg" timezone 
+	[ -z "$timezone" ] && timezone=UTC
+	echo "$timezone" > /tmp/TZ
+}
+
+start() {
+	config_load system
+	config_foreach system_config system
+}
+
+reload() {
+	start
+}
+

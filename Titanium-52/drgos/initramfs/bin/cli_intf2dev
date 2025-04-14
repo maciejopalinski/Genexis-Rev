@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Translate cli interface names to real interface, pppX, ethX et al.
+#
+
+if [ -z "$1" ]; then
+    myname=`basename $0`
+    echo "$myname: No arguments given. List cli interfaces to translate." >&2
+    echo "Usage:" >&2
+    echo "  $myname ifname [ifnames ...]" >&2
+    exit 1
+fi
+
+. /etc/functions.sh
+
+config_load network
+
+for dev in $CONFIG_SECTIONS;do
+    local ifname device
+
+    config_get ifname $dev ifname
+    if [ -n "$ifname" -a -n "$dev" ]; then
+	sed="$sed s/intfname:$dev:intfname/$ifname/g;"
+    fi
+done
+sed="$sed s/intfname://g; s/:intfname//g;"
+
+while [ -n "$1" ]; do
+    echo "intfname:$1:intfname" | sed "$sed"
+    shift
+done

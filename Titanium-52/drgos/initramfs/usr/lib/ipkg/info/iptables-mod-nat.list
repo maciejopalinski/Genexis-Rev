@@ -1,0 +1,7 @@
+/
+/usr/
+/usr/lib/
+/usr/lib/iptables/
+/usr/lib/iptables/libipt_SNAT.so
+/usr/lib/iptables/libipt_MASQUERADE.so
+/usr/lib/iptables/libipt_DNAT.so

@@ -1,0 +1,10 @@
+/
+/etc/
+/etc/profile
+/etc/iso3166-countries.txt
+/etc/init.d/
+/etc/init.d/ox-startup-config
+/usr/
+/usr/bin/
+/usr/bin/wlan-show
+/usr/bin/oxsh

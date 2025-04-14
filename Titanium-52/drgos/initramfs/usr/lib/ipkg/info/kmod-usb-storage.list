@@ -1,0 +1,8 @@
+/
+/etc/
+/etc/modules.d/
+/etc/modules.d/60-usb-storage
+/lib/
+/lib/modules/
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/usb-storage.ko

@@ -1,0 +1,321 @@
+#!/bin/sh
+. /usr/lib/webif/webif.sh
+. /etc/functions.sh
+uci_load "qos"
+QOS_CONF_FILE="/etc/qos.conf"
+rm -rf "$QOS_CONF_FILE"
+echo "# Comcerto 1000's Admittance and Scheduler configuration file" >> "$QOS_CONF_FILE"
+for i in 0 2
+do
+###########################################################
+############### ingress mode configuration#################
+###########################################################
+case $i in
+0) var="0" ;;
+2) var="1" ;;
+esac
+
+config_get mode eth${i} mode
+#case "$mode" in
+#0)
+#shapped_mode=0
+config_get zone0 eth${i} discard_zone0
+[ -n "$zone0" ] || zone0=0
+config_get zone1 eth${i} discard_zone1
+[ -n "$zone1" ] || zone1=0
+config_get zone2 eth${i} discard_zone2
+[ -n "$zone2" ] || zone2=0
+config_get zone3 eth${i} discard_zone3
+[ -n "$zone3" ] || zone3=0
+config_get queue_min eth${i} queue_min
+[ -n "$queue_min" ] || queue_min=0
+config_get queue_max eth${i} queue_max
+[ -n "$queue_max" ] || queue_max=0
+#;;
+#1)
+#shapped_mode=0
+config_get off_tresh eth${i} off_tresh
+[ -n "$off_tresh" ] || off_tresh=0
+config_get on_tresh eth${i} on_tresh
+[ -n "$on_tresh" ] || on_tresh=0
+#;;
+#2)
+#;;
+#esac
+config_get shaper eth${i} shaper
+[ -n "$shaper" ] || shaper=0
+config_get rate eth${i} rate
+[ -n "$rate" ] || rate=0
+config_get max_credit eth${i} max_credit
+[ -n "$max_credit" ] || max_credit=0
+config_get over_head eth${i} over_head
+[ -n "$over_head" ] || over_head=0
+case "$i" in
+0) mask=0xffffffc0 ;;
+2) mask=0xffffffe0 ;;
+esac
+echo "
+#eth${i}
+
+[ADM${var}_MODE]
+mode = $mode
+
+[ADM${var}_DISCARD_CONF]
+zone_prob0 = $zone0
+zone_prob1 = $zone1
+zone_prob2 = $zone2
+zone_prob3 = $zone3
+queue_drop_min = $queue_min
+queue_drop_max = $queue_max
+
+[ADM${var}_FLOWCTRL_CONF]
+off_tresh = $off_tresh
+on_tresh = $on_tresh
+pause_timer = 0x7FFF
+
+[ADM${var}_SHAPER_CONF]
+enable = $shaper
+rate = $rate
+max_credit = $max_credit
+overhead = $over_head
+
+[ADM${var}_LRU_CONF]
+period = 0
+mask = $mask
+" >> "$QOS_CONF_FILE"
+
+###########################################################
+############## ingress policy configuration################
+###########################################################
+config_get policy general ingress_eth${i}_policy
+[ -n "$policy" ] || policy=0
+
+echo "
+[ADM${var}_TCAM_NUM_ENTRY]
+num_cam_entry = $policy
+" >> "$QOS_CONF_FILE"
+
+n=0
+#while [ "$n" -le "$policy" ]
+while [ "$policy" -gt "0" ]
+do
+#m=`expr $n - 1`
+config_get action ingress_eth${i}_${policy} action
+[ -n "$action" ] || action=0
+case "$action" in
+reserved) drop=0 reserved=1 ;;
+managed) drop=0 reserved=0 ;;
+dropped) drop=1 reserved=0 ;;
+esac
+config_get policer ingress_eth${i}_${policy} policer
+[ -n "$policer" ] || policer=0
+config_get etype ingress_eth${i}_${policy} etype
+[ -n "$etype" ] && etype_mask=0xffff || etype=0 etype_mask=0
+config_get src ingress_eth${i}_${policy} src
+[ -n "$src" ] || src=0.0.0.0
+config_get src_mask ingress_eth${i}_${policy} src_mask
+[ -n "$src_mask" ] || src_mask=0.0.0.0
+config_get sport_min ingress_eth${i}_${policy} sport_min
+[ -n "$sport_min" ] || sport_min=0
+config_get sport_max ingress_eth${i}_${policy} sport_max
+[ -n "$sport_max" ] || sport_max=0
+if [ "$sport_min" -eq 0 ]; then
+if [ "$sport_max" -eq 0 ]; then 
+sport_enable=0 
+fi
+fi
+#[ -n "$sport" ] && sport_enable=1 || sport_enable=0 sport=0
+config_get dst ingress_eth${i}_${policy} dst
+[ -n "$dst" ] || dst=0.0.0.0
+config_get dst_mask ingress_eth${i}_${policy} dst_mask
+[ -n "$dst_mask" ] || dst_mask=0.0.0.0
+config_get dport_min ingress_eth${i}_${policy} dport_min
+[ -n "$dport_min" ] || dport_min=0
+config_get dport_max ingress_eth${i}_${policy} dport_max
+[ -n "$dport_max" ] || dport_max=0
+if [ "$dport_min" -eq 0 ]; then
+if [ "$dport_max" -eq 0 ]; then 
+dport_enable=0 
+fi
+fi
+#[ -n "$dport" ] && dport_enable=1 || dport_enable=0 dport=0
+config_get ipproto ingress_eth${i}_${policy} ipproto
+[ -n "$ipproto" ] && ipproto_mask=0xff || ipproto=0 ipproto_mask=0
+
+#[ADM${var}_TCAM_ENTRY${m}]
+echo "
+[ADM${var}_TCAM_ENTRY${n}]
+policer = $policer
+drop = $drop
+reserved = $reserved 
+etype = $etype
+vlan = 0
+pppoe_ipv4 = 0
+pppoe_ipv6 = 0
+iptos = 0
+ipproto = $ipproto
+saddr = $src
+daddr = $dst
+sport_max = $sport_max 
+sport_min = $sport_min
+dport_max = $dport_max
+dport_min = $dport_min
+multicast = 0
+etype_mask = $etype_mask
+vlan_mask = 0
+saddr_mask = $src_mask
+daddr_mask = $dst_mask
+sport_enable = $sport_enable
+dport_enable = $dport_enable
+pppoe_mask = 0
+iptos_mask = 0
+ipproto_mask = $ipproto_mask
+broadcast_mask = 0
+multicast_mask = 0
+" >> "$QOS_CONF_FILE"
+n=`expr $n + 1`
+policy=`expr $policy - 1`
+done
+
+###########################################################
+############## egress shaper configuration################
+###########################################################
+config_get policer_1 eth${i} policer_1
+[ -n "$policer_1" ] || policer_1=0
+config_get rate_1 eth${i} rate_1
+[ -n "$rate_1" ] || rate_1=0
+config_get max_credit_1 eth${i} max_credit_1
+[ -n "$max_credit_1" ] || max_credit_1=0
+config_get policer_2 eth${i} policer_2
+[ -n "$policer_2" ] || policer_2=0
+config_get rate_2 eth${i} rate_2
+[ -n "$rate_2" ] || rate_2=0
+config_get max_credit_2 eth${i} max_credit_2
+[ -n "$max_credit_2" ] || max_credit_2=0
+
+config_get port_status shaper port_status_eth${i}
+[ -n "$port_status" ] || port_status=0
+config_get port_rate shaper port_rate_eth${i}
+[ -n "$port_rate" ] || port_rate=0
+config_get port_max_credit shaper port_max_credit_eth${i}
+[ -n "$port_max_credit" ] || port_max_credit=0
+config_get queue7_status shaper queue7_status_eth${i}
+[ -n "$queue7_status" ] || queue7_status=0
+config_get queue7_rate shaper queue7_rate_eth${i}
+[ -n "$queue7_rate" ] || queue7_rate=0
+config_get queue7_max_credit shaper queue7_max_credit_eth${i}
+[ -n "$queue7_max_credit" ] || queue7_max_credit=0
+config_get queue6_status shaper queue6_status_eth${i}
+[ -n "$queue6_status" ] || queue6_status=0
+config_get queue6_rate shaper queue6_rate_eth${i}
+[ -n "$queue6_rate" ] || queue6_rate=0
+config_get queue6_max_credit shaper queue6_max_credit_eth${i}
+[ -n "$queue6_max_credit" ] || queue6_max_credit=0
+config_get queue5_status shaper queue5_status_eth${i}
+[ -n "$queue5_status" ] || queue5_status=0
+config_get queue5_rate shaper queue5_rate_eth${i}
+[ -n "$queue5_rate" ] || queue5_rate=0
+config_get queue5_max_credit shaper queue5_max_credit_eth${i}
+[ -n "$queue5_max_credit" ] || queue5_max_credit=0
+config_get queue5_weight shaper queue5_weight_eth${i}
+[ -n "$queue5_weight" ] || queue5_weight=0
+config_get queue4_weight shaper queue4_weight_eth${i}
+[ -n "$queue4_weight" ] || queue4_weight=0
+config_get queue3_weight shaper queue3_weight_eth${i}
+[ -n "$queue3_weight" ] || queue3_weight=0
+config_get queue2_weight shaper queue2_weight_eth${i}
+[ -n "$queue2_weight" ] || queue2_weight=0
+config_get queue1_weight shaper queue1_weight_eth${i}
+[ -n "$queue1_weight" ] || queue1_weight=0
+
+echo "
+[ADM${var}_POLICER0]
+enable = $policer_1
+rate = $rate_1
+max_credit = $max_credit_1
+
+[ADM${var}_POLICER1]
+enable = $policer_2
+rate = $rate_2
+max_credit = $max_credit_2
+
+[SCH${var}_SHAPER0]
+enable = $port_status
+rate = $port_rate
+max_credit = $port_max_credit
+
+[SCH${var}_SHAPER1]
+enable = $queue7_status
+rate = $queue7_rate
+max_credit = $queue7_max_credit
+
+[SCH${var}_SHAPER2]
+enable = $queue6_status
+rate = $queue6_rate
+max_credit = $queue6_max_credit
+
+[SCH${var}_SHAPER3]
+enable = $queue5_status
+rate = $queue5_rate
+max_credit = $queue5_max_credit
+
+[SCH${var}_QUEUE1_WEIGHT]
+weight = $queue1_weight
+
+[SCH${var}_QUEUE2_WEIGHT]
+weight = $queue2_weight
+
+[SCH${var}_QUEUE3_WEIGHT]
+weight = $queue3_weight
+
+[SCH${var}_QUEUE4_WEIGHT]
+weight = $queue4_weight
+
+[SCH${var}_QUEUE5_WEIGHT]
+weight = $queue5_weight
+" >> "$QOS_CONF_FILE"
+done
+###########################################################
+############### egress policy configuration################
+###########################################################
+#insmod iptable_mangle 2>&- >&-
+insmod xt_CONNMARK 2>&- >&-
+iptables -t mangle -D POSTROUTING -j mangle_qos 2>&- >&-
+iptables -t mangle -F mangle_qos 2>&- >&-
+iptables -t mangle -X mangle_qos 2>&- >&-
+iptables -t mangle -N mangle_qos 2>&- >&-
+iptables -t mangle -I POSTROUTING 1 -j mangle_qos 2>&- >&-
+
+policy=`uci get qos.general.egress_policy`
+#n=1
+#while [ "$n" -le "$policy" ]
+while [ "$policy" -gt 0 ]
+do
+config_get src egress${policy} src
+[ -n "$src" ] && src="-s $src" || src=""
+config_get sport egress${policy} sport
+[ -n "$sport" ] && sport="--sport $sport" || sport=""
+config_get dst egress${policy} dst
+[ -n "$dst" ] && dst="-d $dst" || dst=""
+config_get dport egress${policy} dport
+[ -n "$dport" ] && dport="--dport $dport" || dport=""
+config_get proto egress${policy} proto
+#[ -n "$proto" ] && porto="-p $proto" || proto=""
+[ "$proto" = "tcp" ] && porto="-p $proto"
+[ "$proto" = "udp" ] && porto="-p $proto"
+[ "$proto" = "icmp" ] && porto="-p $proto" sport="" dport=""
+[ "$proto" = "any" ] && sport="" dport="" proto=""
+config_get dscp egress${policy} dscp
+[ -n "$dscp" ] && dscp="--dscp $dscp" || dscp=""
+config_get dscp_set egress${policy} dscp_set
+[ -n "$dscp_set" ] && dscp_set="--set-dscp $dscp_set" || dscp_set=""
+config_get queue egress${policy} queue
+[ -n "$queue" ] && queue="-j CONNMARK --set-mark $queue" || queue=""
+#[ -n "$queue" ] && echo iptables -t mangle -A mangle_qos $proto $sport $dport $src $dst $dscp $queue $dscp_set 2>&- >&-
+[ -n "$queue" ] && iptables -t mangle -A mangle_qos $proto $sport $dport $src $dst $dscp $queue $dscp_set 2>&- >&-
+#n=`expr $n + 1`
+policy=`expr $policy - 1`
+done
+###########################################################
+/etc/init.d/qoscom stop
+/etc/init.d/qoscom start

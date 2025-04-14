@@ -1,0 +1,44 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=91
+
+start() {
+        if [ -e /proc/fppmode ]; then
+	  if [ "`grep "0" /proc/fppmode`" ]; then
+            exit 0
+          fi
+        fi
+	echo -n Starting Comcerto Fast Path...
+
+	if [ "`grep "Comcerto 1000" /proc/cpuinfo`" ]; then
+		/usr/bin/cmm -c set qm expt_rate 20000
+	else
+		/usr/bin/cmm -c set qm expt_rate 10000
+	fi
+        if [ -e /proc/partno ]; then
+	  if [ "`grep "M83261G" /proc/partno`" ] || [ "`grep "M83251G" /proc/partno`" ] || [ "`grep "M83241G" /proc/partno`" ]; then
+		/usr/bin/cmm -c set config ipsecrl on rate 100000
+          fi
+        fi
+	echo 1 > /sys/class/net/eth0/fast_path_enable
+	echo 1 > /sys/class/net/eth2/fast_path_enable
+	if [ "`grep "Comcerto 1000" /proc/cpuinfo`" ]; then
+		sleep 1
+		qosapp -f /etc/qos.conf
+	fi
+	echo done
+}
+
+stop(){
+        if [ -e /proc/fppmode ]; then
+	  if [ "`grep "0" /proc/fppmode`" ]; then
+            exit 0
+          fi
+        fi
+	echo -n Stopping Comcerto Fast Path...
+	echo 0 > /sys/class/net/eth0/fast_path_enable
+	echo 0 > /sys/class/net/eth2/fast_path_enable
+	echo done
+
+}

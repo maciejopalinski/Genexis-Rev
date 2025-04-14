@@ -1,0 +1,10 @@
+/
+/etc/
+/etc/init.d/
+/etc/init.d/csmencaps-prepare
+/etc/init.d/csmencaps
+/lib/
+/lib/modules/
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/fpp_csme.ko
+/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/csmencaps.ko

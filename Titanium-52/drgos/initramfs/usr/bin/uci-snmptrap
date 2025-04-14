@@ -1,0 +1,115 @@
+#!/bin/sh
+#
+# uci-snmptrap is a wrapper for the standard Net-SNMP snmptrap utility
+# that reads the trap hosts (and their configuration) with UCI for all
+# defined snmp-groups in the system which feature a 'notify' configuration,
+# and then sends a trap to each one.
+#
+# It returns 0 if there were no notify-lines configured or if at
+# at least one trap was succesfully sent.
+# If all notify-lines failed it will return 2.
+# And it will return 1 on syntax error.
+#
+# Note: Only numberic OIDs are supported.
+#
+# Examples:
+#   # Just with the trap oid:
+#   uci-snmptrap .1.3.6.1.4.1.9303.4.14.0.1
+#
+#   # With trap oid and one OID variable:
+#   uci-snmptrap -d .1.3.6.1.4.1.9303.4.14.0.1 \
+#      .1.3.6.1.4.1.9303.4.14.2.1.1.1.13.1.2.3.4 c 90000
+#
+#
+#
+
+
+if [ "$1" == "-d" ]; then
+    dbg=1
+    shift
+else
+    dbg=0
+fi
+
+trapoid=$1 ; shift
+
+if [ -z "$trapoid" ]; then
+	 echo "Usage: $0 [-d] <trapoid> [<tuples..>]"
+	 echo ""
+	 echo "    -d := enable debugging"
+	 echo " tuple := <oid> <type> <value>"
+	 exit 1
+fi
+
+# Extract specific-type (last oid number) for v1 traps
+v1_spectype=`echo $trapoid | sed 's/^\(.*\)\.\([^\.][^\.]*\)$/\2/g'`
+# And the trapoid (enterprise oid) without the specific-type for v1 traps.
+v1_trapoid=`echo $trapoid | sed 's/^\(.*\)\.\([^\.][^\.]*\)$/\1/g'`
+
+if [ -n "$*" ]; then
+    tuples=$*
+fi
+
+# Get the configured SNMP groups with notifications.
+groups=`uci sections snmpd notify`
+
+good=""
+bad=""
+for grp in $groups ; do
+    bad_grp=0
+
+    for var in host community type version ; do
+	val=`uci get "snmpd.${grp}.${var}"`
+	if [ -z "$val" ]; then
+	    bad_grp=1
+	    break
+	fi
+	eval $var=$val
+    done
+
+    if [ "$bad_grp" != "0" ]; then
+	# The group is not okay, skip it.
+	continue
+    fi
+
+    [ $dbg -eq 1 ] && echo "$grp: Send v$version $type to $host ($community)"
+
+    if [ "$type" == "inform" ]; then
+	extra_args="-Ci -r2 -t2"
+    else
+	unset extra_args
+    fi
+
+    if [ "$version" == "1" ]; then
+	# Version 1
+	snmptrap -c "$community" -v1 $extra_args $host \
+	    $v1_trapoid "" 6 $v1_spectype "" $tuples
+    else
+	# Version 2
+	snmptrap -c "$community" -v2c $extra_args $host \
+	    "" $trapoid $tuples
+    fi
+
+    if [ $? -eq 0 ]; then
+	good="$good $grp"
+    else
+	bad="$bad $grp"
+    fi
+
+done
+
+
+if [ $dbg -eq 1 ]; then
+    echo "Trap $trapoid send results"
+    echo " Succeeded groups: $good"
+    echo "    Failed groups: $bad"
+fi
+
+if [ -z "$good" -a ! -z "$bad" ]; then
+    [ $dbg -eq 1 ] && echo "Failed to send trap for all groups ($bad)"
+    exit 2
+fi
+
+# Its enough if we managed to send for at least one group (or none if none
+# were configured).
+exit 0

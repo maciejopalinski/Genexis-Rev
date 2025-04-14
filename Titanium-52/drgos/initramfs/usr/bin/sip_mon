@@ -1,0 +1,46 @@
+#!/bin/sh
+# Copyright (C) 2011 PacketFront International AB
+# Purpose: bug #21835 assert and coredump issues leave 
+#   sipapp forever not running, this monitors and does
+#   automatic restart. When we have actual critical
+#   process watchdog task, then we can remove this
+#   temporary critical sipapp service restart script
+ticks_no_sippapp=0
+reset_due_to_vapi_failure=0
+sipapp_pid=$(cat /var/run/sipapp.pid)
+while true; do
+   sleep 5
+
+   status=$(pidof sipapp)
+   if [ -z "$status" ]; then 
+     if [ -f "/tmp/vapi_term_restart" ]; then
+       let ticks_no_sippapp=ticks_no_sippapp+19
+       let reset_due_to_vapi_failure=1
+       rm -f /tmp/vapi_term_restart
+     else
+       let ticks_no_sippapp=ticks_no_sippapp+1
+     fi
+   else
+    sipapp_pid=$(cat /var/run/sipapp.pid)
+    ticks_no_sippapp=0
+   fi
+
+   # sip app is gone for a specified time, then restart it
+   [ $ticks_no_sippapp -ge 20 ] && {
+    ticks_no_sippapp=0
+    if [ $reset_due_to_vapi_failure -ge 1 ]; then
+      logger -p local0.error "sip_mon force sipapp restart internal error"
+      echo "$(date): sip_mon force sipapp restart internal error" >> /tmp/log/sipapp.log
+      tail -n 100 /tmp/log/sipapp.log > /tmp/log/sipapp.died.$sipapp_pid.log
+    else
+      logger -p local0.error "sip_mon force sipapp restart"
+      echo "$(date): sip_mon force sipapp restart" >> /tmp/log/sipapp.log
+      tail -n 100 /tmp/log/sipapp.log > /tmp/log/sipapp.died.$sipapp_pid.log
+      sleep 1
+    fi
+    # restart sip application via maconfig serialized msg event system
+    echo "sip.toggle=1" > /tmp/mafifo
+    echo "sip.toggle=0" > /tmp/mafifo
+   }
+done
+

@@ -1,0 +1,31 @@
+#
+# Define one or more interfaces on which prefixes should be assigned
+#
+config 'interface' 'vlan1'
+    option 'enabled'      '1'          # 1 = enabled; 0 = disabled
+    option 'interface'    'vlan1'      # This is the interface the DHCPv6 client will run on
+    option 'dns'          'dnsmasq'    # Which DNS server you run (only dnsmasq currently supported)
+    option 'debug'        '0'          # 1 = enable debugging; 0 = disable debugging
+
+    # options for prefix delegation
+    option 'pd_interface' 'lan'
+    option 'sla_id'       '0'          # Site level aggregator identifier specified in decimal (subnet)
+    option 'sla_len'      '0'          # Site level aggregator length (64 - size of prefix being delegated)
+                                       # e.g. /60 from ISP -> 64 - 60 = 4
+
+    # Send options (1 = send; 0 = do not send)
+    option 'pd'           '0'          # Prefix Delegation
+    option 'na'           '0'          # Non-Temporary Address
+    option 'rapid_commit' '0'          # Rapid Commit
+
+    # Request options (1 = request; 0 = do not request)
+    option 'domain_name_servers'      '0'
+    option 'domain_name'              '0'
+
+    # Script to run when a reply is received
+    option 'script' '/usr/bin/dhcp6c-state'
+
+    # Override the used DUID, by default it is derived from the interface MAC
+    # The given value must be uppercase and globally unique!
+    #option 'duid' '00:03:00:06:D8:5D:4C:A5:03:F2'
+

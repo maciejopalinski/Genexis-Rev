@@ -1,0 +1,9 @@
+/
+/usr/
+/usr/lib/
+/usr/lib/ulogd/
+/usr/lib/ulogd/ulogd_LOCAL.so
+/usr/lib/ulogd/ulogd_OPRINT.so
+/usr/lib/ulogd/ulogd_PWSNIFF.so
+/usr/lib/ulogd/ulogd_SYSLOG.so
+/usr/lib/ulogd/ulogd_LOGEMU.so

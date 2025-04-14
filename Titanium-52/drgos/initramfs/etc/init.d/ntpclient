@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2011 PacketFront International AB. All rights reserved.
+START=60
+
+. /etc/functions.sh
+
+NTPC=`which ntpclient`
+NTPC_SHELL=`which ntpclient.sh`
+
+NTP_ROUTE_FILE="/tmp/ntp_route"
+
+stop_ntpclient() {
+  logger stopping ntpclient
+
+  pid=`ps | grep $NTPC_SHELL | grep -v grep | awk '{print $1}'`
+  kill -9 $pid
+
+  pid=`ps | grep $NTPC | grep -v grep | awk '{print $1}'`
+  kill -9 $pid
+
+  [ -f $NTP_ROUTE_FILE ] && old_ntp_route=`cat $NTP_ROUTE_FILE`
+  [ -n "$old_ntp_route" ] && route del ${old_ntp_route%%[[:blank:]]*.*}
+}
+
+start() {
+   $NTPC_SHELL
+}
+
+stop() {
+    stop_ntpclient
+}

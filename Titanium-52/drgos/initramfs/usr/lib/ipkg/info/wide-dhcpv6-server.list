@@ -1,0 +1,13 @@
+/
+/etc/
+/etc/config/
+/etc/config/dhcp6s
+/etc/init.d/
+/etc/init.d/dhcp6s
+/etc/hotplug.d/
+/etc/hotplug.d/iface/
+/etc/hotplug.d/iface/50-dhcp6s
+/etc/dhcp6s.conf.sample
+/usr/
+/usr/sbin/
+/usr/sbin/dhcp6s

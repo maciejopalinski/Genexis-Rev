@@ -1,0 +1,61 @@
+# ---- config for lan ----------
+config interface
+    option interface            'lan'
+    option ignore                1
+    list   client               ''
+    option AdvSendAdvert         1
+    option AdvManagedFlag        0
+    option AdvOtherConfigFlag    0
+    option IgnoreIfMissing       0
+    option UnicastOnly           0
+    option AdvSourceLLAddress    0
+    option AdvHomeAgentFlag      0
+    option AdvHomeAgentInfo      0
+    option AdvMobRtrSupportFlag  0
+    option AdvIntervalOpt        0
+    option MaxRtrAdvInterval    '600'
+    option MinRtrAdvInterval    '200'
+    option MinDelayBetweenRAs   '3'
+    option AdvLinkMTU           '0'
+    option AdvReachableTime     '0'
+    option AdvRetransTimer      '0'
+    option AdvCurHopLimit       '64'
+    option AdvDefaultLifetime   '1800'
+    option AdvDefaultPreference 'medium'    # low|medium|high
+    option HomeAgentLifetime    '1800'
+    option HomeAgentPreference  '0'
+
+config prefix
+    option interface            'lan'
+    option ignore                1
+    list   prefix               ''          # If not specified, a non-link-local prefix of the interface is used
+    option AdvValidLifetime     '86400'
+    option AdvPreferredLifetime '14400'
+    option AdvOnLink             1
+    option AdvAutonomous         1
+    option AdvRouterAddr         0
+    option DeprecatePrefix       0
+    option DecrementLifetimes    0
+
+config route
+    option interface            'lan'
+    option ignore                1
+    list   prefix               ''
+    option RemoveRoute           1
+    option AdvRouteLifetime     '1800'
+    option AdvRoutePreference   'medium'    #low|medium|high
+
+config rdnss
+    option interface            'lan'
+    option ignore                1
+    list   addr                 ''          # If not specified, the link-local address of the interface is used
+    option AdvRDNSSLifetime     '1200'
+    option FlushRDNSS            1
+
+config dnssl
+    option interface            'lan'
+    option ignore                1
+    list   suffix               ''
+    option AdvDNSSLLifetime     '1200'
+    option FlushDNSSL            1
+

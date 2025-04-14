@@ -1,0 +1,13 @@
+# Copyright 2011 PacketFront International AB
+
+case "$ACTION" in                               
+	ifup|update)                                       
+		include /lib/network
+		scan_interfaces                               
+		if [ "lan" = "$INTERFACE" ]; then
+			ipaddr=`uci get network.lan.ipaddr`
+			echo $ipaddr"          router" > /tmp/hosts
+		fi
+		;;                                
+esac    
+

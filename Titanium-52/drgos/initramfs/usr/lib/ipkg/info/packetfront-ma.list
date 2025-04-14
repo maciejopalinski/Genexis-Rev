@@ -1,0 +1,11 @@
+/
+/etc/
+/etc/cwmp_notify.conf
+/etc/cwmp_notify.sh
+/etc/init.d/
+/etc/init.d/ma
+/etc/apply
+/sbin/
+/sbin/ma
+/sbin/cwmp_notify
+/usr/

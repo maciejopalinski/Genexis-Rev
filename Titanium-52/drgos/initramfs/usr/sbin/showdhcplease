@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+
+time_convert() {
+  t1=`expr substr $1 1 2`
+  t2=`expr substr $1 4 2`
+  t3=`expr substr $1 7 2`
+  t4=`expr substr $1 10 2`
+
+  let "time = 0x$t1$t2$t3$t4"
+  let "day = $time/86400"
+  let "hour = $time%86400/3600"
+  let "minute = $time%86400%3600/60"
+  let "second = $time%86400%3600%60"
+
+  echo ${day}d${hour}h${minute}m${second}s
+}                                                                               
+
+show_clients() {
+
+  echo 
+  echo "Client            MAC address      Hostname          Expires"
+  echo "---------------------------------------------------------------------------------"
+
+  while read expiry mac ip name client
+  do
+
+     mac_snpa="${mac:0:2}${mac:3:2}.${mac:6:2}${mac:9:2}.${mac:12:2}${mac:15:2}"
+     if [ "$name" != "*" ]; then
+        hostname="$name"
+     else
+        hostname=""
+     fi
+
+     expiry_time=`date -D %s -d $expiry`
+
+     printf "%-15.15s   %-14.14s   %-15.15s   %28.28s\n" "$ip" "$mac_snpa" "$hostname" "$expiry_time"
+
+  done <"/tmp/dhcp.leases"
+
+  echo 
+}
+
+show_leases() {
+
+  dhcp_logfile="/tmp/dhcp_log.tmp"
+
+  logread|grep "dnsmasq-dhcp" >$dhcp_logfile
+
+  while read expiry mac ip name client
+  do
+     [ -n "$1" ] && [ "$1" == "mac" ] && [ "$2" != "$mac" ] && continue
+     [ -n "$1" ] && [ "$1" == "ip" ] && [ "$2" != "$ip" ] && continue
+
+     echo
+     echo "       MAC Address : " "${mac:0:2}${mac:3:2}.${mac:6:2}${mac:9:2}.${mac:12:2}${mac:15:2}"
+     echo "        IP Address : " "$ip"
+     if [ "$name" != "*" ]; then
+       echo "   Client Hostname : " "$name"
+     else
+       echo "   Client Hostname : "
+     fi
+     if [ "$client" != "*" ]; then
+       echo "         Client-ID : " "$client"
+     else
+       echo "         Client-ID : "
+     fi
+     echo "       Expiry Time : " `date -D %s -d $expiry`
+
+     log=`grep "DHCPACK.*$mac" $dhcp_logfile`
+
+     [ -n "$log" ] && {
+        transaction=${log% DHCPACK*}
+        transaction=${transaction##*: }
+
+        options=`grep "$transaction sent.*option:" $dhcp_logfile \
+        |awk '{ freq[$12]=$13 }  END { for (word in freq) printf "%s %s\n", word, freq[word] }' `
+
+        leasetime=`echo $options|grep "51:lease-time"`
+        [ -n "$leasetime" ] && {
+          leasetime="${options#*51:lease-time }"
+          leasetime="${leasetime:0:11}"
+          leasetime_str=`time_convert $leasetime`
+          sed_str="${sed_str}s/51 :  lease-time  ${leasetime}/51 :  lease-time  ${leasetime_str}/;"
+        }
+
+        t1=`echo $options|grep "58:T1"`
+        [ -n "$t1" ] && {
+          t1="${options#*58:T1 }"
+          t1="${t1:0:11}"
+          t1_str=`time_convert $t1`
+          sed_str="${sed_str}s/58 :  T1  ${t1}/58 :  T1  ${t1_str}/;"
+        }
+
+        t2=`echo $options|grep "59:T2"`
+        [ -n "$t2" ] && {
+          t2="${options#*59:T2 }"
+          t2="${t2:0:11}"
+          t2_str=`time_convert $t2`
+          sed_str="${sed_str}s/59 :  T2  ${t2}/59 :  T2  ${t2_str}/;"
+        }
+
+        echo "      DHCP Options : "
+        grep "$transaction sent.*option:" $dhcp_logfile |grep -v 'option: 5[2-7]' \
+        |awk '{ options[$12]=$13 }
+              END {
+                for (opt in options) {
+                   split(opt, name, ":");
+                   printf "        Option %3d :  %s  %s\n", name[1], name[2], options[opt]
+                }
+              }' \
+        |sed "$sed_str" |sort
+   }
+
+  done <"/tmp/dhcp.leases"
+
+  /bin/rm -f "$dhcp_logfile"
+}
+
+
+
+
+if [ -n "$1" ]; then
+
+   if [ "$1" == "clients" ]; then
+      show_clients
+   else
+      show_leases $1 $2
+   fi
+
+else
+   show_leases
+fi

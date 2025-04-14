@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Display routing table, translate interface names to uci sections
+# to show real interface for pppX, ethX et al.
+
+. /etc/functions.sh
+
+config_load network
+
+for dev in $CONFIG_SECTIONS;do
+    local ifname device deprecated
+    config_get ifname $dev ifname
+    config_get deprecated $dev deprecated
+    #don't display deprecated interfaces
+    if [ -n "$ifname" -a -n "$dev" ]; then
+       #kludge to display a downstream interface instead of
+       #lan in 1.6.1 according to multi lan IP
+       [ -n "$deprecated" ] && dev=$deprecated
+
+       sed="s/$ifname/$dev/g; $sed"
+    fi
+done
+
+netstat -ren | sed "$sed" | sed "s/\(.*vlan[0-9]*\)_\([0-9]*\)/\1\/\2/"

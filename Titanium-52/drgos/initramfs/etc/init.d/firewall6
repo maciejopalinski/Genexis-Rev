@@ -1,0 +1,174 @@
+#!/bin/sh /etc/rc.common
+
+# Copyright (c) 2011 PacketFront International AB. All rights reserved.
+#
+# This Software and its content are protected by the Swedish Copyright Act
+# (Sw: Upphovsr<E4>ttslagen) and, if applicable, the Swedish Patents Act
+# (Sw: Patentlagen). All and any copying and distribution of the software
+# and its content without authorization by PacketFront International AB is
+# prohibited. The prohibition includes every form of reproduction and
+# distribution.
+#
+# Author: pierre ingelfeldt
+#
+
+START=45
+STOP=55
+
+
+
+start() {
+
+    #load a bunch of modules, in 1.6 not all are required
+    insmod ip6_tables  2>&- >&-
+    insmod nf_defrag_ipv6  2>&- >&-
+    insmod nf_conntrack_ipv6  2>&- >&-
+    insmod ip6table_filter  2>&- >&-
+    insmod ip6table_nat  2>&- >&-
+    insmod ip6table_raw  2>&- >&-
+
+    insmod ip6t_REJECT  2>&- >&-
+    insmod ip6t_LOG  2>&- >&-
+    insmod ip6t_ah  2>&- >&-
+    insmod ip6t_eui64  2>&- >&-
+    insmod ip6t_frag  2>&- >&-
+    insmod ip6t_hbh  2>&- >&-
+    insmod ip6t_ipv6header  2>&- >&-
+    insmod ip6t_mh  2>&- >&-
+    insmod ip6t_rt  2>&- >&-
+
+    #load ifnames
+    config_load network
+    config_get wiface wan ifname
+    config_get liface lan ifname
+    config_load network6
+    config_get eiface lan ipv6externaliface
+    [ -n "$eiface" ] && config_get eiface $eiface ifname
+
+    # Flush and zero all existing chains
+    ip6tables -F
+    ip6tables -X
+
+    # LOGDROP - used for logging packet drops. The rate of logging is itself
+    #           limited to prevent this being the bottleneck or filling up
+    #           logs too quickly. This is achieved by using the *recent* module...
+    ip6tables -N .LOGDROP 
+    ip6tables -A .LOGDROP -m recent --rcheck --seconds 60 -j DROP
+    ip6tables -A .LOGDROP -m recent --set -j LOG --log-prefix "Firewall: " --log-level 5
+    ip6tables -A .LOGDROP -j DROP                # Catchall
+
+
+    # INPUTRULES - Default input rules on IPv6 
+    ip6tables -N .INPUTRULES
+    #drop invalid packages
+    ip6tables -A .INPUTRULES -m state --state INVALID -j .LOGDROP
+    # allow incoming ICMP
+    ip6tables -A .INPUTRULES -p ipv6-icmp -j RETURN
+    #allow established
+    ip6tables -A .INPUTRULES -m state --state ESTABLISHED,RELATED -j RETURN
+    #allow dhcp
+    ip6tables -A .INPUTRULES -p udp --dport 546 -j ACCEPT            # DHCP
+    #drop other
+    ip6tables -A .INPUTRULES -j .LOGDROP
+
+    # OUTPUTRULES - Default output rules on IPv6 
+    ip6tables -N .OUTPUTRULES
+    #drop invalid packages
+    ip6tables -A .OUTPUTRULES -m state --state INVALID -j .LOGDROP
+    #allow other
+    ip6tables -A .OUTPUTRULES -j RETURN
+
+
+    # WFORWARDRULES - Default forwarding rules on WAN+ 
+    ip6tables -N .WFORWARDRULES
+    #allow established
+    ip6tables -A .WFORWARDRULES -m state --state ESTABLISHED,RELATED -j RETURN
+    #drop other
+    ip6tables -A .WFORWARDRULES -j .LOGDROP
+
+    # LFORWARDRULES - Default forwarding rules on LAN+ 
+    ip6tables -N .LFORWARDRULES
+    #allow established
+    ip6tables -A .LFORWARDRULES -m state --state INVALID -j .LOGDROP
+    #drop other
+    ip6tables -A .LFORWARDRULES -j RETURN
+
+
+    ### INPUT###
+    #set the policy
+    ip6tables -P INPUT DROP
+    # Allow self communication
+    ip6tables -A INPUT -i lo -j ACCEPT
+    #default rules filter
+    ip6tables -A INPUT -i $wiface+ -j .INPUTRULES
+    ip6tables -A INPUT -i $liface+ -j .INPUTRULES
+    #No ACL's at the moment, just accept
+    ip6tables -A INPUT -i $wiface+ -j ACCEPT
+    ip6tables -A INPUT -i $liface+ -j ACCEPT
+   
+    ###OUTPUT###
+    #set the policy
+    ip6tables -P OUTPUT DROP
+    # Allow self communication
+    ip6tables -A OUTPUT -o lo -j ACCEPT
+    #default rules limiter
+    ip6tables -A OUTPUT -o $wiface+ -j .OUTPUTRULES
+    ip6tables -A OUTPUT -o $liface+ -j .OUTPUTRULES
+    #No ACL's at the moment, just accept
+    ip6tables -A OUTPUT -o $wiface+ -j ACCEPT
+    ip6tables -A OUTPUT -o $liface+ -j ACCEPT
+    
+
+    ###FORWARD###
+    #set the policy
+    ip6tables -P FORWARD DROP
+    # Allow self communication
+    ip6tables -A FORWARD -i lo -j ACCEPT
+    #default rules
+    ip6tables -A FORWARD -i $wiface+ -j .WFORWARDRULES
+    ip6tables -A FORWARD -i $liface+ -j .LFORWARDRULES
+    #Add rules if external interface has been applied
+    if [ -n "$eiface" ]; then
+        ip6tables -A FORWARD -i $eiface -j ACCEPT
+        ip6tables -A FORWARD -i $liface -j ACCEPT
+    fi
+}
+
+reload() {    
+    config_load network
+    config_get liface lan ifname
+    config_load network6
+    config_get eiface lan ipv6externaliface
+    [ -n "$eiface" ] && config_get eiface $eiface ifname
+
+
+    ###FORWARD###
+    #Add rules if external interface has been applied
+    if [ -n "$eiface" ]; then
+        ip6tables -R FORWARD 4 -i $eiface -j ACCEPT
+	[ `echo $?` != "0" ] && ip6tables -A FORWARD -i $eiface -j ACCEPT
+	ip6tables -R FORWARD 5 -i $liface -j ACCEPT
+	[ `echo $?` != "0" ] && ip6tables -A FORWARD -i $liface -j ACCEPT
+    else
+        ip6tables -R FORWARD 4 -j DROP
+	ip6tables -D FORWARD 5
+    fi
+
+    return 0
+}
+
+restart() {
+    true
+}
+
+stop() {
+    
+    # Flush and zero all existing chains
+    ip6tables -F
+    ip6tables -X
+    ip6tables -P INPUT ACCEPT
+    ip6tables -P OUTPUT ACCEPT
+    ip6tables -P FORWARD ACCEPT
+
+}
+

@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+# Copyright (c) 2011 PacketFront International AB
+#
+
+start_trace()
+{
+  local proto="(udp or icmp or arp) and !ip multicast and !ip6 multicast"
+  local src_intf_signal=$(uci -q get sip.global.signal_interface)
+  local src_intf_media=$(uci -q get sip.global.media_interface)
+  local src_ip_signal=""
+  local src_ip_media=""
+  local host=""
+  local tcpdump_pid=$(ps -ef | grep tcpdump | grep "\-w /tmp/sipapp.pcap" | grep -v grep | awk '{print $1}')
+
+  [ -n "$tcpdump_pid" ] && {
+    echo "There is a running VoIP trace capture process. Please stop it then start anther one"
+    return 1
+  }
+
+  # bug 24365 use default interface when no interface has been configured
+  [ -z "$src_intf_signal" ] && src_intf_signal=$(uci get network.default.wan_if)
+  [ -z "$src_intf_media" ] && src_intf_media=$(uci get network.default.wan_if)
+
+  [ -n "$src_intf_signal" ] && {
+    src_ip_signal=$(uci -P /var/state -q get network.$src_intf_signal.ipaddr)
+  }
+  [ -n "$src_intf_media" ] && {
+    src_ip_media=$(uci -P /var/state -q get network.$src_intf_media.ipaddr)
+  }
+
+  [ -z "$src_ip_signal" -o -z "$src_intf_media" ] && {
+    echo "Invalid signalling source IP[$src_ip_signal] or media source IP[$src_ip_media]"
+    return 1
+  }
+
+  if [ "$src_ip_signal" == "$src_ip_media" ]; then
+    host="host $src_ip_signal"
+  else
+    host="(host $src_ip_signal or host $src_ip_media)"
+  fi
+
+  # Note that "-w /tmp/sipapp.pcap" MUST be the first argument to tcpdump because it
+  # is used as an identifier to look up the PID when running stop_trace(). Otherwise
+  # this argument may be truncated by ps if the command line of tcpdump is too long.
+  # The max file size is 5MB. The previous contents of file will be overwritten if the
+  # file size reaches the size limit.
+  tcpdump -w /tmp/sipapp.pcap -i any -s 0 -C 5 -W 1 "$proto and $host" >/dev/null 2>&1 &
+  if [ $? -eq 0 ]; then
+    echo "VoIP trace capture processing is started"
+  else
+    echo "Failed to start VoIP trace capture processing"
+  fi
+}
+
+stop_trace()
+{
+  local tcpdump_pid=$(ps -ef | grep tcpdump | grep "\-w /tmp/sipapp.pcap" | grep -v grep | awk '{print $1}')
+
+  if [ -n "$tcpdump_pid" ]; then
+    for pid in $tcpdump_pid; do
+      [ $pid -gt 0 ] && kill $pid
+    done
+    echo "VoIP trace capture processing is stopped"
+  else
+    echo "There is no VoIP trace capture process"
+  fi
+}
+
+get_hook_state()
+{
+  local voice_line=$1
+
+  [ $voice_line -gt 0 ] && cat /dev/slic | cut -d' ' -f$voice_line
+}
+
+ring_test()
+{
+  local voice_line=$1
+  local start=$2
+
+  [ $voice_line -gt 0 ] && {
+    local state=$(get_hook_state $voice_line)
+
+    [ "$state" != "On-hook" ] && {
+      echo "Please go on-hook and try again"
+      return
+    }
+
+    if [ "$start" == "start" ]; then
+      echo "0$voice_line" > /dev/slic
+      echo "Start ringing"
+    else
+      echo "1$voice_line" > /dev/slic
+      echo "Ringing stopped"
+    fi
+  }
+}
+
+case "$1" in
+  trace)
+  if [ "$2" == "start" ]; then
+    start_trace
+  elif [ "$2" == "stop" ]; then
+    stop_trace
+  else
+    echo "Invalid cmmand: trace $2"
+  fi
+  ;;
+
+  get_hook_state)
+    [ -n "$2 " ] && get_hook_state $2
+  ;;
+
+  ringing)
+    [ -n "$2" -a -n "$3" ] && ring_test $2 $3
+  ;;
+
+  *)
+  echo "Invalid command: $1"
+  ;;
+esac
+

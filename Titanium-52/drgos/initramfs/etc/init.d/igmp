@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=90
+STOP=90
+
+start() {
+    
+    #start snooper
+    killall igmp
+    igmp -t eth2&	
+
+}
+
+restart() {
+    
+    start
+
+}
+
+stop() 
+{
+    #kill snooper
+    killall igmp
+}

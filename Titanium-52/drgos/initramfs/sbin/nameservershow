@@ -1,0 +1,9 @@
+#!/bin/sh
+# Copyright (C) 2011 packetfront AB
+RESOLV_CONF_SHOW="/tmp/resolv.conf.show"
+if [ -f $RESOLV_CONF_SHOW ]; then
+   cat $RESOLV_CONF_SHOW 2> /dev/null
+else
+   echo "No Name Server Information Available"
+fi
+ 

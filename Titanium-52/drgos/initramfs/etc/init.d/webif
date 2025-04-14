@@ -1,0 +1,71 @@
+#!/bin/sh /etc/rc.common
+# This file is not compatible with White Russian and Kamikaze.
+#
+# identification of the device
+#
+START=73
+start() {
+. /etc/functions.sh
+. /lib/config/uci.sh
+. /usr/lib/webif/functions.sh
+uci_load "webif"
+
+	#detect device
+	device_name="$CONFIG_general_device_name"
+	
+	[ -z "$device_name" ] && [ -f "/proc/gpio/model" ] && device_name=$(cat "/proc/gpio/model")
+	while [ -z "$device_name" ]; do
+		device_name="Mindspeed Comcerto 100"
+	done
+
+	#detect firmware info
+#	firmware_name=$CONFIG_general_firmware_name
+#	firmware_subtitle=$CONFIG_general_firmware_subtitle
+#	firmware_version=$CONFIG_general_firmware_version
+	
+	
+	firmware_name=`uname -r | cut -d'-' -f2-`
+#	firmware_subtitle="With X-Wrt Extensions"
+#	firmware_version=$(cat /etc/banner |grep KAMIKAZE |cut -d ' ' -f 5 |cut -d ')' -f 1)
+	
+
+	#
+	# if any variables changed, set it in uci
+	#
+#	if [ "$CONFIG_general_firmware_version" != "$firmware_version" ] ||
+#		[ "$CONFIG_general_firmware_name" != "$firmware_name" ] ||
+#		[ "$CONFIG_general_firmware_subtitle" != "$firmware_subtitle" ]; then
+#		echo "Setting new firmware id ..."
+#		uci_set "webif" "general" "firmware_name" "$firmware_name"
+#		uci_set "webif" "general" "firmware_version" "$firmware_version"
+#		uci_set "webif" "general" "firmware_subtitle" "$firmware_subtitle"
+#	fi
+
+	[ "$device_name" != "$CONFIG_general_device_name" ] && {
+		echo "Device: $device_name" 	
+		echo "Setting new device id ..."		
+		uci_set "webif" "general" "device_name" "$device_name"
+	}
+
+	
+if [ -f /etc/webif.passwd ]; then
+    passwdstr=`cat /etc/webif.passwd`
+else
+    passwd=`uci get webif.password.password`
+    passwdstr="/:admin:$passwd"
+fi
+echo "$passwdstr
+.asp:text/html
+.svg:image/svg+xml
+.png:image/png
+.gif:image/gif
+.jpg:image/jpg
+.js:application/x-javascript " > /etc/httpd.conf
+/etc/init.d/httpd stop
+/etc/init.d/httpd start
+
+}
+
+stop() {
+    /etc/init.d/httpd stop
+}

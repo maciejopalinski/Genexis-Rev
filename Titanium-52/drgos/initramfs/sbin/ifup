@@ -1,0 +1,18 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /sbin/ifdown "$@"
+
+config_get ifname "$1" device
+
+for dev in $ifname; do
+  setup_interface "$dev" "$1"
+  /sbin/uci set "network.$1.uptime=`date -u +%s`"
+done
+
+config_get type "$1" type
+config_get proto "$1" proto
+[ "$type" == "bridge" ] && {
+    setup_interface "br-$1" "$1"
+    /sbin/uci set "network.$1.uptime=`date -u +%s`"
+} 

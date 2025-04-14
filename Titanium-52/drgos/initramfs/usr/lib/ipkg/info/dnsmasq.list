@@ -1,0 +1,8 @@
+/
+/etc/
+/etc/init.d/
+/etc/init.d/dnsmasq
+/usr/
+/usr/sbin/
+/usr/sbin/dnsmasq
+/usr/sbin/showdhcplease

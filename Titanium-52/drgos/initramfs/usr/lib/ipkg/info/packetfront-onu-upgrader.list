@@ -1,0 +1,10 @@
+/
+/etc/
+/etc/config/
+/etc/config/drgos
+/usr/
+/usr/bin/
+/usr/bin/chkimage
+/usr/sbin/
+/usr/sbin/config_dl
+/usr/sbin/upgrader

@@ -1,0 +1,213 @@
+config qos general
+	option ingress_eth0_policy	8
+	option ingress_eth2_policy	5
+	option egress_policy	0
+	
+config qos eth0
+	option mode		0
+	option discard_zone0	0
+	option discard_zone1	1
+	option discard_zone2	4
+	option discard_zone3	8
+	option queue_min	32
+	option queue_max	97
+	option off_tresh	72
+	option on_tresh		108
+	option shaper		0
+	option rate		0
+	option max_credit	2048
+	option over_head	0
+	option policer_1	0
+	option rate_1		0
+	option max_credit_1	0
+	option policer_2	0
+	option rate_2		0
+	option max_credit_2	0
+	
+config qos eth2
+	option mode		0
+	option discard_zone0	0
+	option discard_zone1	1
+	option discard_zone2	4
+	option discard_zone3	8
+	option queue_min	32
+	option queue_max	97
+	option off_tresh	72
+	option on_tresh		108
+	option shaper		0
+	option rate		0
+	option max_credit	2048
+	option over_head	0
+	option policer_1	0
+	option rate_1		0
+	option max_credit_1	0
+	option policer_2	0
+	option rate_2		0
+	option max_credit_2	0
+	
+config qos shaper
+	option port_status_eth0		0
+	option port_rate_eth0		0
+	option port_max_credit_eth0	2048
+	option queue7_status_eth0	0
+	option queue7_rate_eth0		0
+	option queue7_max_credit_eth0	2048
+	option queue6_status_eth0	0
+	option queue6_rate_eth0		0
+	option queue6_max_credit_eth0	2048
+	option queue5_status_eth0	0
+	option queue5_rate_eth0		0
+	option queue5_max_credit_eth0	2048
+	option queue5_weight_eth0 	0
+	option queue4_weight_eth0 	0
+	option queue3_weight_eth0 	0
+	option queue2_weight_eth0 	0
+	option queue1_weight_eth0 	0
+	
+	option port_status_eth2		0
+	option port_rate_eth2		0
+	option port_max_credit_eth2	2048
+	option queue7_status_eth2	0
+	option queue7_rate_eth2		0
+	option queue7_max_credit_eth2	2048
+	option queue6_status_eth2	0
+	option queue6_rate_eth2		0
+	option queue6_max_credit_eth2	2048
+	option queue5_status_eth2	0
+	option queue5_rate_eth2		0
+	option queue5_max_credit_eth2	2048
+	option queue5_weight_eth2 	0
+	option queue4_weight_eth2 	0
+	option queue3_weight_eth2 	0
+	option queue2_weight_eth2 	0
+	option queue1_weight_eth2 	0
+	
+config qos ingress_eth0_1
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	0
+	option etype	0x8863
+                                                
+config qos ingress_eth0_2
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	0
+	option etype	0x8864
+                                                
+config qos ingress_eth0_3
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	2
+	option etype	0
+                                                
+config qos ingress_eth0_4
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	0
+	option etype	0
+                                                
+config qos ingress_eth0_5
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	58
+	option etype	0
+                                                
+config qos ingress_eth0_6
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	0
+	option etype	0x0806
+                                                
+config qos ingress_eth0_7
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	1
+	option etype	0
+                                                
+config qos ingress_eth0_8
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	17
+	option etype	0
+                                                
+config qos ingress_eth2_1
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	6
+	option etype	0
+                                                
+config qos ingress_eth2_2
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	2
+	option etype	0
+                                                
+config qos ingress_eth2_3
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	58
+	option etype	0
+                                                
+config qos ingress_eth2_4
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	0
+	option etype	0x0806
+                                                
+config qos ingress_eth2_5
+	option action   reserved
+	option policer  0
+	option src      
+	option sport    
+	option dst      
+	option dport    
+	option ipproto	1
+	option etype	0

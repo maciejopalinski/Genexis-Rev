@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=39
+
+start() {
+	ifconfig eth1 up
+	
+	#Loading csmencaps
+	echo "Starting csmencaps"
+	insmod csmencaps
+	insmod fpp_csme
+	echo "done"
+}
+
+stop() {	
+	/etc/init.d/cmm stop
+
+	#stop fci/fpp
+	/etc/init.d/fci stop
+	/etc/init.d/fpp stop
+	/etc/init.d/fpp_enable stop
+
+	sleep 1
+
+	#Unloading csmencaps
+	rmmod fpp_csme
+	rmmod csmencaps
+
+	ifconfig eth1 down
+}

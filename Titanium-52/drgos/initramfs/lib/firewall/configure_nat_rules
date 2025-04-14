@@ -1,0 +1,280 @@
+#!/bin/sh
+#iptables -t nat -A PREROUTING -j prerouting_rule
+#iptables -t nat -A POSTROUTING -j postrouting_rule
+
+#nat=`uci get nat.general.nat`
+#case $nat in
+#enable)
+#[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+#;;
+#esac
+
+# generate_random()	Generates an 8-character pseudorandom string, this is
+#			used in chain names
+
+generate_random() {
+POS=2  # Starting from position 2 in the string.
+LEN=8  # Extract eight characters.
+
+  str1=$( echo $RANDOM | md5sum )
+
+  randstring="${str1:$POS:$LEN}"
+
+  echo "$randstring"
+
+  return "$?"
+}
+
+checkip (){
+     echo $1 | grep " " > /dev/null
+     if [ $? -eq 0 ] ; then
+         return 1
+     fi
+
+     local subcount=0
+     local subiplist=`echo $1 | sed s/"\."/" "/g`
+     for var in $subiplist
+     do
+         echo $var | grep "^[0-9]*$" >/dev/null
+         if [ $? -ne 0 ]; then
+             return 1
+         fi
+
+         if [ $var -ge 0 -a $var -le 255 ] ; then
+             let subcount=$subcount+1
+             continue
+         else
+             return 1
+         fi
+     done
+
+     if [ $subcount -eq 4 ]; then
+         return 0
+     else
+         return 1
+     fi
+}
+
+find_hostip() {
+    local host=$localip
+    checkip $host
+    if [ $? -eq 0 ] ; then
+        return 0
+    fi
+
+    nslookup $host > /tmp/lookup.tmp
+	local hit=0
+	while read line
+	do
+	    if [ $hit -eq 1 ] ; then
+		    for sect in $line
+		    do
+		        checkip $sect
+		        if [ $? -eq 0 ] ; then
+		            localip=$sect
+		            return 1
+		        fi
+		    done
+	    fi
+
+		echo $line | grep $host | grep Name > /dev/null
+	    if [ $? -eq 0 ] ; then
+			hit=1
+	    fi
+	done < /tmp/lookup.tmp
+
+    return 0
+}
+
+get_rule_name() {
+    all_seq="$all_seq $1"
+}
+
+sort_seq() {
+    all_seq=""
+    config_foreach get_rule_name nat
+
+    # Sort the rules according to the seq
+    local j=1
+    local min_seq="0"
+
+    for tmp in $all_seq
+    do
+        local seq_compare="2147483647"
+
+        for seq in $all_seq ; do
+            if [ "$seq" -gt "$min_seq" -a "$seq" -lt "$seq_compare" ] ; then
+                seq_compare="$seq"
+            fi
+        done
+
+        sorted_seq="$sorted_seq $seq_compare"
+        min_seq=$seq_compare
+        let j=$j+1
+    done
+}
+
+# create_rule()	Create a rule, or set of rules in iptables from a single command
+#		object
+#
+# Inputs:	Sequence identifier
+#		Prerouting Chain identifier
+#		Forwarding Chain identifier
+#
+create_rule() {
+     local seq=$1
+     local prerouting_chain=$2
+     local forwarding_chain=$3
+
+     config_get ruleenable $seq enable
+     config_get localip $seq local_ip
+
+     if [ "$ruleenable" == "1" ] && [ -n "$localip" ] ; then
+
+        find_hostip
+
+        config_get wanip $seq wan_ip
+        config_get proto $seq protocol
+        config_get localportlist $seq local_port
+        config_get wanportlist $seq wan_port
+
+        wanportlist=`echo $wanportlist | sed s/,/" "/g`
+        localportlist=`echo $localportlist | sed s/,/" "/g`
+        portindex=0
+        for wanport in $wanportlist; do
+            let portindex=$portindex+1
+
+            # Get the corresponding local port range
+            localportindex=0
+            for localport in $localportlist; do
+                let localportindex=$localportindex+1
+                if [ $localportindex -eq $portindex ] ; then
+                    break;
+                fi
+            done
+
+            case $proto in
+             tcp | TCP) protocol="-p tcp";;
+             udp | UDP) protocol="-p udp";;
+             both) protocol="both";;
+             icmp | ICMP) protocol="-p icmp";;
+            esac
+
+            natinterface="-i $natif"
+
+            # Remove any whitespace from the list of external ports
+            wanport=`echo $wanport | sed s/[\ \\t]//g`
+            # Convert port range syntax (from "start-end" to "start:end")
+            wanport=`echo $wanport | sed s/-/:/g`
+
+            if [ -n "$wanport" ] ; then
+               externalport="--dport $wanport"
+            else
+               externalport=""
+            fi
+
+            if [ -n "$wanip" ] ; then
+               sourceip="-s $wanip"
+            else
+               sourceip=""
+            fi
+
+            # Remove any whitespace from the list of local ports
+            localport=`echo $localport | sed s/[\ \\t]//g`
+
+            if [ -n "$localport" ] ; then
+               destip="--to $localip:$localport"
+               localport=`echo $localport | sed s/-/:/g`
+               destport="--dport $localport"
+            else
+               destip="--to $localip"
+               destport=""
+            fi
+
+echo "create_rule(): "$forwarding_chain
+echo "create_rule(): "$prerouting_chain
+
+            if [ "$protocol" != "both" ]; then
+                iptables -t nat -A $prerouting_chain $natinterface $sourceip $protocol -m multiport $externalport -j DNAT $destip
+                iptables -A $forwarding_chain $natinterface $sourceip -d $localip $protocol $destport -j ACCEPT
+            else
+                # Need to create same entries for TCP and UDP
+                iptables -t nat -A $prerouting_chain $natinterface $sourceip -p tcp -m multiport $externalport -j DNAT $destip
+                iptables -A $forwarding_chain $natinterface $sourceip -d $localip -p tcp $destport -j ACCEPT
+                iptables -t nat -A $prerouting_chain $natinterface $sourceip -p udp -m multiport $externalport -j DNAT $destip
+                iptables -A $forwarding_chain $natinterface $sourceip -d $localip -p udp $destport -j ACCEPT
+            fi
+        done
+     fi
+}
+
+
+
+nat_process() {
+
+    config_get WAN wan ifname
+    config_get LAN lan ifname
+    config_get externif lan natexternaliface
+    config_get natif $externif ifname
+    
+    #return if nat external interface has not yet been defined
+    [ -z "$natif" ] && return 0
+    
+#config_get natenable general nat
+#  if [ "$natenable" == "enable" ]; then
+    
+    # Create new rule chains
+    prc="prerouting-"`eval generate_random`
+    fwc="forwarding-"`eval generate_random`
+    
+    echo "New chain names:" $prc $fwc
+    
+    # Create the new chains
+    iptables        -N $fwc
+    iptables -t nat -N $prc
+    
+    sorted_seq=""
+    sort_seq
+    
+    # Now create a set of rules for iptables, and put them into new chains
+    for seq in $sorted_seq; do
+	create_rule $seq $prc $fwc
+    done
+    echo `iptables -n -L $fwc`
+    echo `iptables -n -t nat -L $prc`
+    
+    # Figure out the names of the current rule chains, need these so we
+    # can delete them when we are ready
+    old_fwc=`iptables -n --line-numbers -L FORWARD | grep "forwarding" | awk '{ print $2 }'`
+    fwc_rule=`iptables -n --line-numbers -L FORWARD | grep "forwarding" | awk '{ print $1 }'`
+    old_prc=`iptables -n --line-numbers -t nat -L PREROUTING | grep "prerouting" | awk '{ print $2 }'`
+    prc_rule=`iptables -n --line-numbers -t nat -L PREROUTING | grep "prerouting" | awk '{ print $1 }'`
+    
+    echo "Old chain names:" $old_fwc":"$fwc_rule $old_prc":"$prc_rule
+
+    # FIXME - check here that the chains and locations are vailable
+    # Swap the new rule chains for the existing chains
+    
+    echo ${#fwc_rule}", "${#prc_rule}
+    if [ $fwc_rule != "" ]; then
+      iptables        -R FORWARD $fwc_rule -j $fwc
+    else
+      iptables        -I FORWARD -j $fwc
+    fi
+    if [ "$prc_rule" != "" ]; then
+      iptables -t nat -R PREROUTING $prc_rule -j $prc
+    else
+      iptables -t nat -I PREROUTING -j $prc
+    fi
+
+echo "Delete old chains: "$old_fwc $old_prc
+    if [ -n "$old_fwc" ]; then
+      iptables        -F $old_fwc
+      iptables        -X $old_fwc
+    fi
+    if [ -n "$old_prc" ]; then
+      iptables -t nat -F $old_prc
+      iptables -t nat -X $old_prc
+    fi
+#  fi
+}

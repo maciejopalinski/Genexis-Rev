@@ -1,0 +1,131 @@
+#!/bin/sh
+security_level=`uci get firewall.general.security_level`
+#####natenable=`uci get nat.general.nat`
+proto=`uci get network.wan.proto`
+if [ "$proto" == "pppoe" ];then
+WAN=ppp0
+else
+WAN=`uci get network.wan.ifname`
+fi
+
+###When security level is "High Security"
+if [ "$security_level" == "high" ]
+then
+
+  ### INPUT
+	###  (connections with the router as destination)
+	ip6tables -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -j ACCEPT
+	ip6tables -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -j ACCEPT
+	ip6tables -A INPUT -m state --state INVALID -j DROP
+	ip6tables -A INPUT -j input_rule
+	ip6tables -A INPUT ! -i $WAN -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+	ip6tables -A INPUT -p tcp --tcp-flags SYN SYN ! --tcp-option 2 -j  DROP
+
+	
+	# Accept anything not coming from the WAN interface (i.e. eth1:MSP, eth2:lan, and if present Wifi)
+	ip6tables -A INPUT ! -i $WAN -j ACCEPT
+	ip6tables -A INPUT -p ipv6-icmp -j ACCEPT
+	ip6tables -P INPUT DROP
+
+  ### OUTPUT
+	ip6tables -P OUTPUT ACCEPT
+	ip6tables -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -j ACCEPT
+	ip6tables -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -j ACCEPT
+	ip6tables -A OUTPUT -m state --state INVALID -j DROP
+	ip6tables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+  ### FORWARDING
+	### (connections routed through the router)
+	ip6tables -P FORWARD DROP
+	ip6tables -A FORWARD -m state --state INVALID -j DROP
+	ip6tables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+	ip6tables -A FORWARD -j forwarding_rule
+
+  ### MASQ
+#####	ip6tables -t nat -A PREROUTING -j prerouting_rule
+#####	ip6tables -t nat -A POSTROUTING -j postrouting_rule
+
+#####	if [ "$natenable" == "enable" ];then
+#####	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+#		[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i $WAN -j DROP
+#####	fi
+#####	/lib/firewall/configure_nat_rules
+#	/lib/firewall/configure_firewall_rules firewall-high
+#####	/lib/firewall/configure_filter_rules
+fi
+
+###When security level is "Low Security"
+if [ "$security_level" == "low" ]
+then
+
+  ### INPUT
+	###  (connections with the router as destination)
+	ip6tables -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -j ACCEPT
+	ip6tables -A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -j ACCEPT
+	ip6tables -A INPUT -m state --state INVALID -j DROP
+	ip6tables -A INPUT -j input_rule
+	ip6tables -A INPUT ! -i $WAN -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+	ip6tables -A INPUT -p tcp --tcp-flags SYN SYN ! --tcp-option 2 -j  DROP
+
+
+	# Accept anything not coming from the WAN interface (i.e. eth1:MSP, eth2:lan, and if present Wifi)
+	ip6tables -A INPUT ! -i $WAN -j ACCEPT
+	ip6tables -A INPUT -p ipv6-icmp -j ACCEPT
+	ip6tables -P INPUT DROP
+
+  ### OUTPUT
+	ip6tables -P OUTPUT ACCEPT
+	ip6tables -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -j ACCEPT
+	ip6tables -A OUTPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -j ACCEPT
+	ip6tables -A OUTPUT -m state --state INVALID -j DROP
+	ip6tables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+  ### FORWARDING
+	### (connections routed through the router)
+	ip6tables -P FORWARD DROP
+	ip6tables -A FORWARD -m state --state INVALID -j DROP
+	ip6tables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+	ip6tables -A FORWARD -j forwarding_rule
+	# Forward anything not coming from the WAN interface (i.e. eth1:MSP, eth2:lan, and if present Wifi)
+	ip6tables -A FORWARD ! -i $WAN -j ACCEPT
+
+  ### MASQ
+#####	iptables -t nat -A PREROUTING -j prerouting_rule
+#####	iptables -t nat -A POSTROUTING -j postrouting_rule
+
+#####	if [ "$natenable" == "enable" ];then
+#####	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+#	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i $WAN -j DROP
+#####	fi
+#####	/lib/firewall/configure_nat_rules
+#	/lib/firewall/configure_firewall_rules firewall-low
+#####	/lib/firewall/configure_filter_rules
+fi
+
+###When security level is "No Security"
+if [ "$security_level" == "no" ]
+then
+
+  ### INPUT
+	ip6tables -A INPUT -j input_rule
+	ip6tables -P INPUT ACCEPT
+
+  ### OUTPUT
+	ip6tables -P OUTPUT ACCEPT
+
+  ### FORWARDING
+	ip6tables -P FORWARD ACCEPT
+	ip6tables -A FORWARD -j forwarding_rule
+
+  ### MASQ
+#####	ip6tables -t nat -A PREROUTING -j prerouting_rule
+#####	ip6tables -t nat -A POSTROUTING -j postrouting_rule
+
+#####	if [ "$natenable" == "enable" ];then
+#####	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+#	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i $WAN -j DROP
+#	[ -z "$WAN" ] || ip6tables -A FORWARD -i $WAN -m state --state NEW -j DROP
+#####	fi
+#####	/lib/firewall/configure_nat_rules
+#####	/lib/firewall/configure_filter_rules
+fi

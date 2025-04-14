@@ -1,0 +1,22 @@
+DEVICENAME ~~ (tun|tap[0-9]) {
+	makedev /dev/net/%DEVICENAME% 0644
+	next
+}
+
+DEVICENAME ~~ (controlC[0-9]|pcmC0D0*) {
+        makedev /dev/snd/%DEVICENAME% 0644
+        next
+}
+
+DEVPATH is set {
+	makedev /dev/%DEVICENAME% 0644
+}
+
+FIRMWARE is set {
+	exec /sbin/hotplug-call firmware;
+	next
+}
+
+SUBSYSTEM ~~ (net|button|usb) {
+	exec /sbin/hotplug-call %SUBSYSTEM%;
+}

@@ -1,0 +1,115 @@
+#!/bin/sh
+#
+# wlan-show [-c] [interface]
+#
+# Fetch wlan statistics and information
+#
+#
+
+radev=ra0
+clientlist=/tmp/dhcp.leases
+
+iwconfig=`iwconfig $radev` 2>/dev/null
+
+[ ."$1" == ."-c" ] && clients=1 && shift || clients=
+[ ."$1" == ."-i" ] && intf=1 && shift || intf=
+
+case "$1" in
+  -*)
+	echo `basename $0`: unknown option "'$1'" >&2
+	echo "Usage: "`basename $0`" [-c] [-i] [interface]" >&2
+	exit 1
+	;;
+  *)
+	;;
+esac
+
+ifname=`echo $1 | awk 'BEGIN { ifs["wlan1"] = "ra0"; ifs["wlan2"] = "ra1"; \
+                               ifs["wlan3"] = "ra2"; ifs["wlan4"] = "ra3"; }\
+                      { print ifs[$1]; }'`
+
+ifconfig=`ifconfig $ifname` 2>/dev/null
+
+macaddr=`echo $ifconfig | grep HWaddr | sed 's/.*HWaddr //; s/ .*//'|tr 'A-F' 'a-f'`
+
+essid=`echo $iwconfig|grep ESSID:\"|sed 's/.* ESSID:\"//; s/\" Nick.*//'`
+channel=`echo $iwconfig|grep Channel=|sed 's/.* Channel=//; s/ Access.*//'`
+[ "$channel" = "" ] && channel="N/A"
+
+linkstatus=`echo $ifconfig | grep Link | sed 's/.*Link //; s/ MTU.*//;'`
+[ "$linkstatus" == "UP BROADCAST RUNNING MULTICAST" ] && radiostat="enabled" \
+  || radiostat="disabled"
+
+if [ -e "$clientlist" ]; then
+    num_clients=`iwpriv ra0 get_mac_table | wc -l`
+    let num_clients=$num_clients-3
+else
+    num_clients=0
+fi
+
+[ "$num_clients" -eq 1 ] && client_s=client || client_s=clients
+echo "  Mac address $macaddr, $num_clients $client_s connected"
+echo "  Radio $radiostat, channel $channel"
+
+
+if [ "$clients" == "1" ]; then
+  echo ""
+
+  echo "Client                   MAC address        Signal(dBm)            Expires"
+  echo "--------------------------------------------------------------------------"
+
+  while read line; do 
+      macaddr=`echo $line | sed 's/://g' | cut -d' ' -f2`
+      iwpriv ra0 get_mac_table | grep $macaddr > /dev/null
+      [ `echo $?` = "0" ] && echo $line | awk '{printf "%-23.23s  %-18.18s  %10.10s  %17.17s\n", $3, $2, "-", strftime("%j", $1-systime())-1 " days " strftime("%T", $1-systime());}'
+  done < $clientlist
+elif [ "$intf" == "1" ]; then
+  true
+else
+  echo ""
+
+  inbps=0
+  inpps=0
+  outbps=0
+  outpps=0
+
+
+  rxpkts=`echo $ifconfig | sed -n 's/.*RX packets:\([0-9]*\).*/\1/p'`
+  [ -z "$rxpkts" ] && rxpkts=0
+  rxbytes=`echo $ifconfig | sed -n s'/.*RX bytes:\([0-9]*\).*/\1/p'`
+  [ -z "$rxbytes" ] && rxbytes=0
+  rxerrors=`echo $ifconfig | sed -n 's/.*RX packet.* errors:\([0-9]*\).*/\1/p'`
+  [ -z "$rxerrors" ] && rxerrors=0
+  rxdrops=`echo $ifconfig | sed -n 's/.*RX packet.* dropped:\([0-9]*\).*/\1/p'`
+  [ -z "$rxdrops" ] && rxdrops=0
+  rxover=`echo $ifconfig | sed -n s'/.*RX packet.* overruns:\([0-9]*\).*/\1/p'`
+  [ -z "$rxover" ] && rxover=0
+  rxframe=`echo $ifconfig | sed -n s'/.*RX packet.* frame:\([0-9]*\).*/\1/p'`
+  [ -z "$rxframe" ] && rxframe=0
+
+  txpkts=`echo $ifconfig | sed -n s'/.*TX packets:\([0-9]*\).*/\1/p'`
+  [ -z "$txpkts" ] && txpkts=0
+  txbytes=`echo $ifconfig | sed -n s'/.*TX bytes:\([0-9]*\).*/\1/p'`
+  [ -z "txbytes" ] && txbytes=0
+  txerrors=`echo $ifconfig | sed -n s'/.*TX packet.* errors:\([0-9]*\).*/\1/p'`
+  [ -z "txerrors" ] && txerrors=0
+  txover=`echo $ifconfig | sed -n s'/.* TX packet.* overruns:\([0-9]*\).*/\1/p'`
+  [ -z "txover" ] && txover=0
+  txcarr=`echo $ifconfig | sed -n s'/.*TX packet.* carrier:\([0-9]*\).*/\1/p'`
+  [ -z "$txcarr" ] && txcarr=0
+  txcoll=`echo $ifconfig | sed -n s'/.*collisions:\([0-9]*\).*/\1/p'`
+  [ -z "$txcoll" ] && txcoll=0
+
+#  echo "  10 seconds input rate $inbps bits/sec, $inpps packets/sec"
+#  echo "  10 seconds output rate $outbps bits/sec, $outpps packets/sec"
+  echo "  $rxpkts packets input, $rxbytes bytes, $rxerrors input errors"
+  echo "    $rxdrops input queue drops, 0 unknown protocols"
+  echo "    0 broadcasts, 0 multicasts, 0 pause"
+  echo "    0 runts, $rxover oversized, 0 CRC"
+  echo "    0 jabbers, 0 fragments, 0 symbol, 0 alignment"
+  echo "  $txpkts packets output, $txbytes bytes, $txerrors output errors"
+  echo "    $txover output queue drops"
+  echo "    0 broadcasts, 0 multicasts, 0 pause"
+  echo "    $txcoll collisions, 0 deferred"
+
+fi

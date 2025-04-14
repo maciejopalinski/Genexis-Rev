@@ -1,0 +1,46 @@
+#!/bin/sh /etc/rc.common
+
+START=49
+STOP=51
+
+platform=`uci get usp.product.platform`
+[ `echo $?` != "0" ] &&  { 
+    msg="failed to read usp.product.platform"
+    logger -s -t autoswitching -p daemon.debug "$msg"
+}
+
+[ -z "$platform" ] && platform=DRG700
+
+start() {
+    if [ "DRG700" = "$platform" ]; then
+        #start wan hunter
+	drg700_autoswitch.sh&
+    elif [ "HRG1000" = "$platform" ]; then
+	autosw=`uci get usp.hwcfg.autosw`
+	if [ "$autosw" = "1" ]; then
+	    autoswitch&
+	fi
+    else
+	msg="Unknown platform value, autoswitching will not be started"
+	logger -s -t autoswitching -p daemon.debug "$msg"
+    fi
+}
+
+stop()
+{
+    if [ "DRG700" = "$platform" ]; then
+        #kill autoswitching function
+	killall drg700_autoswitch.sh
+    else
+	kill `pidof autoswitch` 
+    fi
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    restart
+}
