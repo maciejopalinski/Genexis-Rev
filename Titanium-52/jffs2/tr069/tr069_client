@@ -1,0 +1,4 @@
+
+config 'cwmp' 'cwmp'
+	option 'acs_server' ''
+

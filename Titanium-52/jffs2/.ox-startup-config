@@ -1,0 +1,47 @@
+catv enable
+
+management source-interface lan
+
+!username admin password admin
+!username admin access gui
+!username operator password operator
+!username operator access cli
+username root password $1$079LOaMg$hobfwLdVpGqiObwjHvIuM/ encrypted
+username root access cli
+
+interface lan
+ !ip address 192.168.1.254/24
+ !ipv6 address auto
+
+interface lan/ethernet1
+
+interface lan/ethernet2
+
+interface lan/ethernet3
+
+interface lan/ethernet4
+
+interface vlan1
+ !ip address dhcp
+ !ipv6 address auto
+
+interface wan
+ !vlan member 1
+ !vlan untagged 1
+
+interface wlan1
+
+interface wlan2
+ !shutdown
+
+interface wlan3
+ !shutdown
+
+interface wlan4
+ !shutdown
+
+voice
+
+voice line 1
+
+voice line 2
