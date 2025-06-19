@@ -3,7 +3,7 @@ VENV := .venv
 PIP := $(VENV)/bin/pip
 JEFFERSON := $(VENV)/bin/jefferson
 
-SUBDIRS := jffs2 drgos
+SUBDIRS := bootloader drgos jffs2
 
 .PHONY: all clean distclean $(SUBDIRS)
 all: $(SUBDIRS)
