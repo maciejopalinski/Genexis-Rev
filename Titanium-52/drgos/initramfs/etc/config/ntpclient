@@ -1,6 +1,0 @@
-config ntpdrift
-	option freq     '0'
-
-config ntpclient general
-	option interval	14400
-	#option count	10

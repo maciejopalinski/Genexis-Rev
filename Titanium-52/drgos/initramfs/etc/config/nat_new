@@ -1,6 +1,0 @@
-
-# Copyright (C) 2006 OpenWrt.org
-
-config nat general_new
-        option rules_count      0
-        option nat	''

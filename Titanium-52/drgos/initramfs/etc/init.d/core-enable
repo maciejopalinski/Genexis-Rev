@@ -1,8 +1,0 @@
-#!/bin/sh /etc/rc.common
-
-START=11
-
-start() {
-	#sysctl -w "kernel.core_pattern=/tmp/%e.%p.%s.%t.core"
-	sysctl -w "kernel.core_pattern=/tmp/%e.core"
-}

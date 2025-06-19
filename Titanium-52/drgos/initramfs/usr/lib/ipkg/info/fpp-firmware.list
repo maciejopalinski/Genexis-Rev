@@ -1,9 +1,0 @@
-/
-/etc/
-/etc/modules.d/
-/etc/init.d/
-/etc/init.d/fpp_enable
-/etc/init.d/fpp
-/lib/
-/lib/firmware/
-/lib/firmware/fpp.axf

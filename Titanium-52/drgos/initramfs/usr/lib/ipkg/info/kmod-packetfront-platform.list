@@ -1,8 +1,0 @@
-/
-/etc/
-/etc/modules.d/
-/etc/modules.d/31-packetfront-platform
-/lib/
-/lib/modules/
-/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/
-/lib/modules/2.6.33.5-drgos-hrg1000-1.6.5-R/packetfront-platform.ko
