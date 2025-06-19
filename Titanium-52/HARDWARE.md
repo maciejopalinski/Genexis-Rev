@@ -4,7 +4,7 @@
 
 ## Hardware
 
--   [Mindspeed J83100G PFX562.00C - Comcerto 1000, ARM1136 Core Communication Processor]()
+-   [Mindspeed J83100G PFX562.00C M83241G-13 - Comcerto 1000, ARM1136 Core Communication Processor]()
 -   [Atheros AR8328-BK1A - 7-port Low-power Managed/Layer3 Gigabit Switch with Hardware NAT](./datasheets/qualcomm_ethos-ar8328-ar8328n.pdf)
 -   [Si32260-FW - Single-Chip Dual ProSlic](./datasheets/Si32260-61.pdf)
 -   [2x Nanya NT5TU32M16DG-AC - DDR2 512Mb SDRAM](./datasheets/512Mb_DDR2_F_Die_component_Datasheet.pdf)
