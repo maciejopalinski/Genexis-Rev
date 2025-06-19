@@ -3,16 +3,22 @@ VENV := .venv
 PIP := $(VENV)/bin/pip
 JEFFERSON := $(VENV)/bin/jefferson
 
-all: jffs2
+SUBDIRS := jffs2 drgos
 
-jffs2: jffs2/extracted/
+.PHONY: all clean distclean $(SUBDIRS)
+all: $(SUBDIRS)
 
-jffs2/extracted/: jffs2/jffs2.img $(JEFFERSON)
-	$(JEFFERSON) -d $@ $<
-	find $@ -type f -exec shasum {} \;
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+jffs2: $(JEFFERSON)
+
+drgos: jffs2
 
 clean:
-	rm -rf ./jffs2/extracted/
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir clean; \
+	done
 
 distclean: clean
 	rm -rf $(VENV)
