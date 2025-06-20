@@ -1,0 +1,236 @@
+Initializing cgroup subsys cpuset
+Initializing cgroup subsys cpu
+Linux version 2.6.33.5-drgos-hrg1000-1.6.5-R (pingelfeldt@se-builder) (gcc version 4.1.2) #1 Wed Aug 1 00:49:40 CEST 2012
+CPU: ARMv6-compatible processor [4117b365] revision 5 (ARMv6TEJ), cr=00c5387d
+CPU: VIPT aliasing data cache, VIPT aliasing instruction cache
+Machine: Comcerto 1000 (EVM)
+Memory policy: ECC disabled, Data cache writeback
+Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 30480
+Kernel command line: console=ttyS0,115200 bootloader=drgldr-hrg1000-1.3.1-RC14 mtdparts=comcertoflash.0:128K(Bootstrap)ro,31232K(JFFS2),512K(Bootloader1),512K(Bootloader2),128K(UniqueParam)ro,128K(BootloaderCFG)ro,128K(SharedCFG)
+PID hash table entries: 512 (order: -1, 2048 bytes)
+Dentry cache hash table entries: 16384 (order: 4, 65536 bytes)
+Inode-cache hash table entries: 8192 (order: 3, 32768 bytes)
+allocated 614400 bytes of page_cgroup
+please try 'cgroup_disable=memory' option if you don't want memory cgroups
+Memory: 120MB = 120MB total
+Memory: 108288KB available (3348K code, 240K data, 9148K init, 0K highmem)
+Hierarchical RCU implementation.
+RCU-based detection of stalled CPUs is enabled.
+NR_IRQS:80
+Calibrating delay loop... 448.92 BogoMIPS (lpj=2244608)
+Mount-cache hash table entries: 512
+Initializing cgroup subsys debug
+Initializing cgroup subsys ns
+Initializing cgroup subsys cpuacct
+Initializing cgroup subsys memory
+Initializing cgroup subsys devices
+Initializing cgroup subsys freezer
+Initializing cgroup subsys net_cls
+CPU: Testing write buffer coherency: ok
+NET: Registered protocol family 16
+SPI core: loaded version 0.2
+PCIe0: no device detected on link (3)
+PCIe1: no device detected on link (3)
+pcie_setup(0)
+pcie_scan_bus(0)
+PCI: bus0: Fast back to back transfers enabled
+pcie_setup(1)
+pcie_scan_bus(1)
+PCI: bus1: Fast back to back transfers enabled
+bio: create slab <bio-0> at 0
+usbcore: registered new interface driver usbfs
+usbcore: registered new interface driver hub
+usbcore: registered new device driver usb
+Switching to clocksource timer3
+NET: Registered protocol family 2
+IP route cache hash table entries: 1024 (order: 0, 4096 bytes)
+TCP established hash table entries: 4096 (order: 3, 32768 bytes)
+TCP bind hash table entries: 4096 (order: 2, 16384 bytes)
+TCP: Hash tables configured (established 4096 bind 4096)
+TCP reno registered
+UDP hash table entries: 256 (order: 0, 4096 bytes)
+UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
+NET: Registered protocol family 1
+RPC: Registered udp transport module.
+RPC: Registered tcp transport module.
+RPC: Registered tcp NFSv4.1 backchannel transport module.
+SPI core: add adapter comcerto-spi
+arm1: Module loaded.
+Registering mini_fo version $Id: 209-mini_fo.patch,v 1.1.2.1 2010/06/21 09:34:58 satananda.burla Exp $
+JFFS2 version 2.2 (NAND) (ZLIB) (RTIME) (c) 2001-2006 Red Hat, Inc.
+msgmni has been set to 211
+Block layer SCSI generic (bsg) driver version 0.4 loaded (major 254)
+io scheduler noop registered (default)
+Serial: 8250/16550 driver, 1 ports, IRQ sharing disabled
+serial8250.0: ttyS0 at MMIO 0x10090000 (irq = 41) is a 16550A
+console [ttyS0] enabled
+loop: module loaded
+nbd: registered device at major 43
+comcertoflash.0: Found 1 x16 devices at 0x0 in 16-bit bank
+ Amd/Fujitsu Extended Query Table at 0x0040
+comcertoflash.0: CFI does not contain boot bank location. Assuming top.
+number of CFI chips: 1
+7 cmdlinepart partitions found on MTD device comcertoflash.0
+Creating 7 MTD partitions on "comcertoflash.0":
+0x000000000000-0x000000020000 : "Bootstrap"
+0x000000020000-0x000001ea0000 : "JFFS2"
+0x000001ea0000-0x000001f20000 : "Bootloader1"
+0x000001f20000-0x000001fa0000 : "Bootloader2"
+0x000001fa0000-0x000001fc0000 : "UniqueParam"
+0x000001fc0000-0x000001fe0000 : "BootloaderCFG"
+0x000001fe0000-0x000002000000 : "SharedCFG"
+c1k_eth_probe: gemac 0
+eth0: C1000 Ethernet Controller 00:ed:cd:ef:aa:cc 
+c1k_eth_probe: gemac 1
+eth2: C1000 Ethernet Controller 00:2a:2b:2c:2d:2e 
+Comcerto MDIO Bus: probed
+Comcerto MDIO Bus: probed
+tun: Universal TUN/TAP device driver, 1.6
+tun: (C) 1999-2004 Max Krasnyansky <maxk@qualcomm.com>
+usbmon: debugfs is not available
+comcerto_wdt: support registered
+cpuidle: using governor ladder
+IPv4 over IPv4 tunneling driver
+TCP cubic registered
+Initializing XFRM netlink socket
+NET: Registered protocol family 10
+lo: Disabled Privacy Extensions
+tunl0: Disabled Privacy Extensions
+IPv6 over IPv4 tunneling driver
+sit0: Disabled Privacy Extensions
+ip6tnl0: Disabled Privacy Extensions
+NET: Registered protocol family 17
+NET: Registered protocol family 15
+Initializing NETLINK_KEY socket
+802.1Q VLAN Support v1.8 Ben Greear <greearb@candelatech.com>
+All bugs added by David S. Miller <davem@redhat.com>
+Freeing init memory: 9148K
+Please be patient, while OpenWrt loads ...
+init started: BusyBox v1.11.2 (2012-08-01 00:09:46 CEST)
+
+(none) login: SCSI subsystem initialized
+PPP generic driver version 2.4.2
+ppp_async: Unknown symbol crc_ccitt_table
+packetfront_platform_init called...
+platform_name = HRG1000
+platform_detect: platform type HRG1000 found
+gpio: Detected 'Genexis HRG1000'
+proslic: module license 'Proprietary' taints kernel.
+Disabling lock debugging due to kernel taint
+SPI core: add driver proslic-si3226x
+proslic_attach_adapter(): started
+SPI core: attach client to adapter comcerto-spi
+hardware reset slic by using gpio pin [fxs_reset]
+proslic_attach_adapter(): proslic: Initializing ProSLIC API
+proslic_attach_adapter(): devices = 1, channels = 2, type = 5, max = 2, chan per = 2
+Proslic: Initializing ProSLIC(s)
+si3226x : Channel 0 : Type = PROSLIC
+si3226x : Channel 1 : Type = PROSLIC
+si3226x : Channel 0 : Chip Type 28
+si3226x : Channel 0 : Chip Rev 3
+si3226x : Channel 1 : Chip Type 28
+si3226x : Channel 1 : Chip Rev 3
+si3226x : DCDC Powerup Channel 0 Ignored
+Initial VBAT = 59.111 v
+Fixed VBAT Up = 59.111 v
+proslic_device_probe(): proslic: initialized proslic device
+Starting LB Cal on channel 0
+Starting LB Cal on channel 1
+proslic_device_probe(): proslic: calibrated proslic device
+proslic_device_init(): proslic_device_init(0xc5594e00, 0, 0)
+proslic_device_init(): error flag = 0	channel enable = 1
+proslic_device_init(): proslic_device_init: channel = 0, tdm_coding = 0
+proslic_device_init(): proslic_device_init: channel = 0, pcm_clock_slot = 1
+Si3226x PCMStart
+proslic_device_init(): proslic: setting in active mode
+proslic_device_init(): proslic_device_init(0xc5594e00, 0, 1)
+proslic_device_init(): error flag = 0	channel enable = 1
+proslic_device_init(): proslic_device_init: channel = 1, tdm_coding = 0
+proslic_device_init(): proslic_device_init: channel = 1, pcm_clock_slot = 9
+Si3226x PCMStart
+proslic_device_init(): proslic: setting in active mode
+proslic_device_probe(): proslic: found 2 proslic channel
+Proslic: Reading hook status from 2 ProSLIC(s)
+proslic attach adapter: Create cdev driver for /dev/slic major=127
+proslic attach adapter: Got cdev major number 127
+proslic attach adapter: add cdev pslic_cdev for /dev/slic
+proslic_init(): proslic: Wideband capable ProSLIC Driver
+ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+tdi_reset: set Streaming disable mode
+tdi_reset: set Streaming disable mode
+comcerto-ehci comcerto-ehci.1: comcerto EHCI
+comcerto-ehci comcerto-ehci.1: new USB bus registered, assigned bus number 1
+comcerto-ehci comcerto-ehci.1: irq 5, io mem 0x0f000000
+tdi_reset: set Streaming disable mode
+comcerto-ehci comcerto-ehci.1: USB 2.0 started, EHCI 1.00
+usb usb1: New USB device found, idVendor=1d6b, idProduct=0002
+usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+usb usb1: Product: comcerto EHCI
+usb usb1: Manufacturer: Linux 2.6.33.5-drgos-hrg1000-1.6.5-R ehci_hcd
+usb usb1: SerialNumber: comcerto-ehci.1
+hub 1-0:1.0: USB hub found
+hub 1-0:1.0: 1 port detected
+external_switch_init_module(): Module initializing...
+external_switch_init_module(): Module initialized OK.
+Initializing USB Mass Storage driver...
+usbcore: registered new interface driver usb-storage
+USB Mass Storage support registered.
+SwitchSetPortAutoMode(): fal_port_autoneg_enable() failed
+SwitchSetPortAutoMode() failed
+msconfig: speedHandler:value could not be set!
+comcerto-ved comcerto-ved: firmware: requesting msp.axf
+MSP is running
+drivers/net/comcerto/comcerto_ved.c: 455: info 
+	Device=170
+	Revision=0
+	spu_version=Arm11DspV_5_6_8
+	CSPtoMSPQueuePhyaddr=a000500
+	MSPtoCSPQueuePhyaddr=a000510
+	SMRXCSPhyaddr=a000520
+	SMTXCSPhyaddr=a000520
+	
+MSP version is : mspvoip_v6_01_2
+NET: Registered protocol family 27
+c1k_eth_open: eth0
+Disabling GEM0 delay
+eth0: c1k_eth_close
+c1k_eth_open: eth0
+Disabling GEM0 delay
+eth0: c1k_eth_close
+c1k_eth_open: eth0
+Disabling GEM0 delay
+c1k_eth_open: eth2
+Disabling GEM1 delay
+eth2: c1k_eth_close
+c1k_eth_open: eth2
+Disabling GEM1 delay
+device eth2 entered promiscuous mode
+br-lan: port 1(eth2) entering forwarding state
+br-lan: port 1(eth2) entering disabled state
+br-lan: port 1(eth2) entering forwarding state
+br-lan: port 1(eth2) entering disabled state
+br-lan: port 1(eth2) entering forwarding state
+ip_tables: (C) 2000-2006 Netfilter Core Team
+ip6_tables: (C) 2000-2006 Netfilter Core Team
+Netfilter messages via NETLINK v0.30.
+nf_conntrack version 0.5.0 (1837 buckets, 7348 max)
+CONFIG_NF_CT_ACCT is deprecated and will be removed soon. Please use
+nf_conntrack.acct=1 kernel parameter, acct=1 nf_conntrack module option or
+sysctl net.netfilter.nf_conntrack_acct=1 to enable it.
+ctnetlink v0.93: registering with nfnetlink.
+nf_conntrack_rtsp v0.6.21 loading
+nf_nat_rtsp v0.6.21 loading
+pind: osAddListener: listener 3 added on pos 0
+pind: osAddListener: listener 4 added on pos 1
+unetlink: Started
+
+vwd_driver_init: start
+vwd_up: start
+vwd_init_buffers: txQ : c0411000:87efa000
+vwd_init_buffers: expt rxQ : c0411400:87efa400
+vwd_up: start1
+vwd_driver_init: end
+Disabling GEM0 delay
+Disabling GEM1 delay
+Firewall: IN= OUT=br-lan SRC=fe80:0000:0000:0000:020f:94ff:fe28:0a11 DST=fe80:0000:0000:0000:e6c0:e2ff:fe1c:d250 LEN=104 TC=0 HOPLIMIT=64 FLOWLBL=0 PROTO=ICMPv6 TYPE=129 CODE=0 ID=14083 SEQ=0 
+
