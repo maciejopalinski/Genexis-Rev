@@ -3,7 +3,7 @@ VENV := .venv
 PIP := $(VENV)/bin/pip
 JEFFERSON := $(VENV)/bin/jefferson
 
-SUBDIRS := drgldr drgos jffs2
+SUBDIRS := drgboot drgldr drgos jffs2 unique-param
 
 .PHONY: all clean distclean $(SUBDIRS)
 all: $(SUBDIRS)
