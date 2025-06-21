@@ -2,4 +2,8 @@
 
 drgboot-hrg1000-1.3.1-RC12
 
-based on U-boot
+first stage bootloader, based on U-boot
+
+## Boot process
+
+-   boots straight into the second stage bootloader (drgldr)

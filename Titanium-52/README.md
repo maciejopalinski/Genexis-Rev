@@ -13,3 +13,9 @@
 -   [TPS54227 - 4.5V to 18V input, 2A synchronous step-down converter in HSOP and VSON package](./datasheets/tps54227.pdf)
 -   [2x LM339A](./datasheets/lm339a.pdf)
 -   [AP7165 - 600mA LOW DROPOUT REGULATOR WITH POK](./datasheets/AP7165.pdf)
+
+## Boot Process
+
+-   The device boots the first stage bootloader, which is stored in the mtd0 partition.
+-   The first stage bootloader loads the second stage bootloader (drgldr) from the mtd2 partition or mtd3 backup partition.
+-   The second stage bootloader reads the mtd1 partition, scans the JFFS2 filesystem contained on it, loads the u-boot image, and boots the kernel.
