@@ -1,4 +1,4 @@
-all: Flash_OS1.Image Flash_OS2.Image
+all: Flash_OS1.Image Flash_OS1.rest.bin Flash_OS2.rest.bin
 
 Flash_OS%.Image: Flash_OS%.zImage
 	lzma -dc $< > $@
