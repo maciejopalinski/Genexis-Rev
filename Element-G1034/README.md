@@ -10,3 +10,8 @@
 -   [SN74LVC126A - Quadruple Bus Buffer Gate With 3-State Outputs](./datasheets/sn74lvc126a.pdf)
 -   [LM339A - Precision quad differential comparator](./datasheets/lm339a.pdf)
 -   [KPT22 PAXP - ?]()
+
+## Boot Process
+
+-   The device boots the first stage bootloader (RedBoot)
+-   The first stage bootloader loads an eCos based operating system from the FIS partition.

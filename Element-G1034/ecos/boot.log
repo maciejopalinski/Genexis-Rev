@@ -1,0 +1,59 @@
+net work support.
+ecos entry: 0x800100BC
++qca_i2c.c, i2cInit, I2C i2c device 0 - SCL is set to 16666
+fal_I2CInit finished at Standard Speed
+JUDGE uni port, please wait...
+get ExtPHYEn=0
+get image flag info 0
+ppe irq Init finished
+creat mutex
+QCA ESA: 00:0f:94:1a:00:e5
+lwip ip : 192.168.1.222
+grebe_packet Init finished
+global Init finished
+ips Init finished
+mc Init finished
+fdb Init finished
+vlp Init finished
+port init finished
+fpc 0 init finished
+fpc 1 init finished
+fpc 2 init finished
+ ffm init finished
+tm init finished
+fid init finished
+qmap init finished
+vlp default config finished
+mc default config finished
+fdb default config finished
+port default config finished
+fpc default config finished
+qmap default config finished
+ffm default config finished
+tm default config finished
+fid default config finished
+ppe next hop init finished
+ppe_init finished
+dlm init finished
+ptp ulm init finished
+ppe total counter init finished
+ppe clock gatting init finished
+get image flag info 0
+gpon_isr_init finished
+grebe_gpon_init finished
+gponDeviceInit finished
+End ploamInit finished
+get image flag info 0
+fal_VlanInit finished
+fal_McInit finished
+fal_FdbInit finished
+fal_PortInit finished
+fal_CclInit finished
+fal_QosInit finished
+get image flag info 0
+omci_main.c main
+OMCI Initial 
+IGMP Initial 
+get image flag info 0
+RSTP Initial 
+HNT1000>
