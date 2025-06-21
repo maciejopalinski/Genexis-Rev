@@ -1,6 +1,9 @@
 all: RedBoot.bin RedBoot\ config.bin
 
-%.bin: ../fis/bin/%.bin
+RedBoot.bin: ../fis/bin/RedBoot.bin
+	ln -vsf "$<" "$@"
+
+RedBoot\ config.bin: ../fis/bin/RedBoot\ config.bin
 	ln -vsf "$<" "$@"
 
 clean:

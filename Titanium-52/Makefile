@@ -3,13 +3,15 @@ VENV := .venv
 PIP := $(VENV)/bin/pip
 JEFFERSON := $(VENV)/bin/jefferson
 
-SUBDIRS := drgboot drgldr drgos jffs2 unique-param
+SUBDIRS := drgboot drgldr drgos jffs2 mtd unique-param
 
 .PHONY: all clean distclean $(SUBDIRS)
 all: $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@
+
+drgboot drgldr jffs2 unique-param: mtd
 
 jffs2: $(JEFFERSON)
 

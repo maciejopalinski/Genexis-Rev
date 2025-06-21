@@ -1,26 +1,17 @@
-all: drgldr-hrg1000-1.3.1-RC14.bin drgldr.env
+all: drgldr-hrg1000-1.3.1-RC14.1.Image drgldr.env
 
-drgldr-hrg1000-1.3.1-RC14.bin: drgldr-hrg1000-1.3.1-RC14.uImage
+%.Image: %.uImage
 	dd if=$< of=$@ bs=64 skip=1
 
-drgldr-hrg1000-1.3.1-RC14.uImage: Bootloader1.img
+drgldr-hrg1000-1.3.1-RC14.%.uImage: ../mtd/Bootloader%.img
 	dd if=$< of=$@ bs=1 count=245144
 	# rest is padded with ffff
-
-Bootloader1.img: ../mtd/mtdblock2
-	ln -vsf $< $@
-
-Bootloader2.img: ../mtd/mtdblock3
-	ln -vsf $< $@
 
 drgldr.env: drgldr.cfg
 	dd if=$< bs=4 skip=1 | tr '\0' '\n' > $@
 
-drgldr.cfg: BootloaderCFG.img
+drgldr.cfg: ../mtd/BootloaderCFG.img
 	dd if=$< of=$@ bs=16384 count=1
 
-BootloaderCFG.img: ../mtd/mtdblock5
-	ln -vsf $< $@
-
 clean:
-	rm -vrf drgldr* Bootloader*
+	rm -vrf drgldr*
