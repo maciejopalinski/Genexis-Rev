@@ -1,1 +1,4 @@
+*.uImage
+*.zImage
+*.Image
 *.bin
