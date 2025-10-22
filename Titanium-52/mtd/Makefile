@@ -20,7 +20,7 @@ all: $(IMAGES)
 	if [ -z "$$block" ]; then \
 	  echo "Error: No mtdblock number defined for $*.img" >&2; exit 1; \
 	fi; \
-	ln -vsf ../mtd/mtdblock$$block $@
+	ln -vsf "../mtd/mtdblock$$block" "$@"
 
 clean:
 	rm -rf *.img

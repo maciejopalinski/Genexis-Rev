@@ -4,7 +4,7 @@ SUBDIRS := ecos fis redboot
 all: $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	$(MAKE) -C "$@"
 
 redboot ecos: fis
 

@@ -1,20 +1,24 @@
-all: drgos-hrg1000-1.6.5-R.initrd
+all: drgos-hrg1000-1.6.5-R.Image drgos-hrg1000-1.6.5-R.initrd
 
 %.initrd: %.initrd.cpio
-	mkdir -p $@
-	cpio -idmvD $@ --no-absolute-filenames < $<
+	mkdir -p "$@"
+	cpio -idmvD "$@" --no-absolute-filenames < "$<"
 
 %.initrd.cpio: %.initrd.cpio.gz
-	gunzip -k $<
+	gunzip -k < "$<" > "$@"
 
 %.initrd.cpio.gz: %.Image
-	dd if=$< of=$@ bs=1 skip=110592 count=9244289
+	dd if="$<" of="$@" bs=512 skip=216 count=18056
 
-%.Image: %.zImage
-	gunzip -k < $< > $@
+%.Image: %.gzImage
+	gunzip -k < "$<" > "$@"
 
-%.zImage: ../jffs2/extracted/00/%.img
-	dd if=$< of=$@ bs=64 skip=1
+%.gzImage: %.uImage
+	dumpimage -l "$<"
+	dumpimage -T kernel -o "$@" "$<"
+
+%.uImage: ../jffs2/extracted/00/%.img
+	ln -vsf "$<" "$@"
 
 clean:
 	rm -rf drgos* initrd*

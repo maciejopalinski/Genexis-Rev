@@ -9,7 +9,7 @@ SUBDIRS := drgboot drgldr drgos jffs2 mtd unique-param
 all: $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	$(MAKE) -C "$@"
 
 drgboot drgldr jffs2 unique-param: mtd
 
