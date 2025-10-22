@@ -1,0 +1,28 @@
+root@drgos:~# cat /proc/iomem
+0a000420-0a00043f : fpp_smi
+0a000440-0a00045f : fpp_smi
+0a000600-0a003dff : aram
+0a003e00-0a0053ff : aram
+0a006000-0a009fff : aram
+0a00a000-0a00dfff : aram
+0a01e000-0a01ffff : aram
+0e000000-0effffff : elp
+0f000000-0f7fffff : comcerto-ehci.1
+  0f000000-0f7fffff : ehci_hcd
+10090000-1009001f : serial
+10098000-10099000 : comcerto-spi
+  10098000-10099000 : Comcerto SPI
+1009c000-1009cfff : comcerto_i2c
+100d0000-100dffff : gemac
+  100de000-100de3ff : comcerto-mdio.0
+100f0000-100f0fff : regs
+  100f0000-100f0fff : regs
+10190000-1019ffff : gemac
+  1019e000-1019e3ff : comcerto-mdio.1
+20000000-21ffffff : comcertoflash.0
+  20000000-21ffffff : flash
+40000000-4fffffff : Comcerto PCIe0 Memory Space
+50000000-5fffffff : Comcerto PCIe1 Memory Space
+80800000-87ffffff : System RAM
+  810f7000-8143bfff : Kernel text
+  8143c000-814782d3 : Kernel data

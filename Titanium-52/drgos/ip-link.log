@@ -1,0 +1,19 @@
+root@drgos:~# ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 1000
+    link/ether 00:0f:94:28:0a:10 brd ff:ff:ff:ff:ff:ff
+3: eth2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 1000
+    link/ether 00:0f:94:28:0a:11 brd ff:ff:ff:ff:ff:ff
+4: eth1: <BROADCAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN 
+    link/ether 00:aa:bb:cc:dd:ee brd ff:ff:ff:ff:ff:ff
+5: tunl0: <NOARP> mtu 1480 qdisc noop state DOWN 
+    link/ipip 0.0.0.0 brd 0.0.0.0
+6: sit0: <NOARP> mtu 1480 qdisc noop state DOWN 
+    link/sit 0.0.0.0 brd 0.0.0.0
+7: ip6tnl0: <NOARP> mtu 1460 qdisc noop state DOWN 
+    link/tunnel6 :: brd ::
+8: br-lan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN 
+    link/ether 00:0f:94:28:0a:11 brd ff:ff:ff:ff:ff:ff
+9: eth0.1@eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP 
+    link/ether 00:0f:94:28:0a:10 brd ff:ff:ff:ff:ff:ff

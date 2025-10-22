@@ -1,0 +1,65 @@
+root@drgos:~# lsmod
+Module                  Size  Used by    Tainted: P  
+qoscom                 36824  0 
+comcerto_vwd            9658  0 
+fci                     3784  6 
+comcerto_fpp            4338  4 comcerto_vwd,fci
+ip6t_rt                 1556  0 
+ip6t_mh                  700  0 
+ip6t_ipv6header          996  0 
+ip6t_hbh                1216  0 
+ip6t_frag                864  0 
+ip6t_eui64               720  0 
+ip6t_ah                  800  0 
+ip6t_LOG                4456  1 
+ip6t_REJECT             2072  0 
+ip6table_raw             656  0 
+ip6table_filter          752  1 
+nf_conntrack_ipv6       8883  5 
+xt_string                852  0 
+nf_nat_tftp              444  0 
+nf_conntrack_tftp       2344  1 nf_nat_tftp
+nf_nat_rtsp             3456  0 
+nf_conntrack_rtsp       4009  1 nf_nat_rtsp
+nf_nat_ftp              1212  0 
+nf_conntrack_ftp        4696  1 nf_nat_ftp
+ipt_ULOG                3864  2 
+xt_recent               5140  8 
+xt_limit                 976  1 
+xt_tcpmss                964  0 
+xt_multiport            1968  0 
+ipt_REJECT              1600  0 
+ipt_REDIRECT             820  0 
+ipt_MASQUERADE          1152  0 
+iptable_raw              712  0 
+iptable_nat             3028  1 
+iptable_filter           864  1 
+xt_tcpudp               1808  19 
+xt_state                 824  13 
+xt_helper                788  0 
+xt_conntrack            1852  0 
+xt_connmark              676  0 
+xt_connbytes            1116  0 
+nf_conntrack_netlink    13376  0 
+nf_conntrack_proto_sctp     5284  0 
+nf_nat                 10956  6 nf_nat_tftp,nf_nat_rtsp,nf_nat_ftp,ipt_REDIRECT,ipt_MASQUERADE,iptable_nat
+nf_conntrack_ipv4       8246  11 iptable_nat,nf_nat
+nf_defrag_ipv4           658  1 nf_conntrack_ipv4
+nf_conntrack           43907  18 nf_conntrack_ipv6,nf_nat_tftp,nf_conntrack_tftp,nf_nat_rtsp,nf_conntrack_rtsp,nf_nat_ftp,nf_conntrack_ftp,ipt_MASQUERADE,iptable_nat,xt_state,xt_helper,xt_conntrack,xt_connmark,xt_connbytes,nf_conntrack_netlink,nf_conntrack_proto_sctp,nf_nat,nf_conntrack_ipv4
+nfnetlink               1835  4 nf_conntrack_netlink
+ip6_tables              9675  8 ip6t_rt,ip6t_ipv6header,ip6t_hbh,ip6t_frag,ip6t_ah,ip6t_LOG,ip6table_raw,ip6table_filter
+ip_tables               9045  3 iptable_raw,iptable_nat,iptable_filter
+x_tables                9106  27 ip6t_rt,ip6t_mh,ip6t_ipv6header,ip6t_hbh,ip6t_frag,ip6t_eui64,ip6t_ah,ip6t_LOG,ip6t_REJECT,xt_string,ipt_ULOG,xt_recent,xt_limit,xt_tcpmss,xt_multiport,ipt_REJECT,ipt_REDIRECT,ipt_MASQUERADE,iptable_nat,xt_tcpudp,xt_state,xt_helper,xt_conntrack,xt_connmark,xt_connbytes,ip6_tables,ip_tables
+fpp_csme                3283  1 comcerto_fpp
+csmencaps              14202  0 
+packetfront_catv         808  0 
+usb_storage            32751  0 
+genexis_switch        179759  0 
+ehci_hcd               29373  0 
+sd_mod                 22728  0 
+proslic               125755  0 
+packetfront_gpio       11950  3 packetfront_catv,proslic
+packetfront_platform      806  1 packetfront_gpio
+ppp_generic            18357  0 
+slhc                    4363  1 ppp_generic
+scsi_mod               66063  2 usb_storage,sd_mod

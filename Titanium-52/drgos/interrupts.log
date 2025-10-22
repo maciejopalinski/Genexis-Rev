@@ -1,0 +1,14 @@
+root@drgos:~# cat /proc/interrupts
+           CPU0
+  1:          3  Comcerto INTC0  comcerto_ved
+  5:          0  Comcerto INTC0  ehci_hcd:usb1
+ 22:         11  Comcerto INTC0  c1k_fbpool, c1k_fbpool
+ 26:          0  Comcerto INTC0  timer5
+ 27:          0  Comcerto INTC0  timer4
+ 30:     641868  Comcerto INTC0  timer1
+ 41:         22  Comcerto INTC1  serial
+ 47:          0  Comcerto INTC1  vwd_rx
+ 53:          0  Comcerto INTC1  c1k_gemRx
+ 55:       4967  Comcerto INTC1  c1k_gemRx
+ 57:          0  Comcerto INTC1  Comcerto Fast Path Processor Driver
+Err:          0

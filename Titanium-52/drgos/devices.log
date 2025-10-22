@@ -1,0 +1,41 @@
+root@drgos:~# cat /proc/devices
+Character devices:
+  1 mem
+  4 ttyS
+  5 /dev/tty
+  5 /dev/console
+  5 /dev/ptmx
+ 10 misc
+ 90 mtd
+108 ppp
+126 qoscom
+127 /dev/slic
+128 ptm
+136 pts
+180 usb
+189 usb_device
+237 /dev/msp
+253 vwd
+254 bsg
+
+Block devices:
+259 blkext
+  7 loop
+  8 sd
+ 31 mtdblock
+ 43 nbd
+ 65 sd
+ 66 sd
+ 67 sd
+ 68 sd
+ 69 sd
+ 70 sd
+ 71 sd
+128 sd
+129 sd
+130 sd
+131 sd
+132 sd
+133 sd
+134 sd
+135 sd

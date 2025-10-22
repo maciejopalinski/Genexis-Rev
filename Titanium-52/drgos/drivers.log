@@ -1,0 +1,17 @@
+root@drgos:~# ls -lah /sys/devices/platform/*/driver
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/c1000-eth.0/driver -> ../../../bus/platform/drivers/c1000-eth
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/c1000-eth.1/driver -> ../../../bus/platform/drivers/c1000-eth
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/c1000-fbpool.0/driver -> ../../../bus/platform/drivers/c1000-fbpool
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/c1000-fbpool.1/driver -> ../../../bus/platform/drivers/c1000-fbpool
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto-ehci.1/driver -> ../../../bus/platform/drivers/comcerto-ehci
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto-mdio.0/driver -> ../../../bus/platform/drivers/comcerto-mdio
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto-mdio.1/driver -> ../../../bus/platform/drivers/comcerto-mdio
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto-spi/driver -> ../../../bus/platform/drivers/comcerto-spi
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto-tdm.0/driver -> ../../../bus/platform/drivers/comcerto-tdm
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto-ved/driver -> ../../../bus/platform/drivers/comcerto-ved
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcerto_wdt/driver -> ../../../bus/platform/drivers/comcerto_wdt
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/comcertoflash.0/driver -> ../../../bus/platform/drivers/comcertoflash
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/pcie.0/driver -> ../../../bus/platform/drivers/pcie
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/pcie.1/driver -> ../../../bus/platform/drivers/pcie
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/serial8250.0/driver -> ../../../bus/platform/drivers/serial8250
+lrwxrwxrwx    1 root     root            0 Jan  1 00:05 /sys/devices/platform/serial8250/driver -> ../../../bus/platform/drivers/serial8250

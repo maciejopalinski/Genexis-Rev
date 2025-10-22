@@ -1,0 +1,2 @@
+root@drgos:~# cat /proc/cmdline
+console=ttyS0,115200 bootloader=drgldr-hrg1000-1.3.1-RC14 mtdparts=comcertoflash.0:128K(Bootstrap)ro,31232K(JFFS2),512K(Bootloader1),512K(Bootloader2),128K(UniqueParam)ro,128K(BootloaderCFG)ro,128K(SharedCFG)

